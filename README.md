@@ -30,8 +30,9 @@ A Python script that extracts transcripts from YouTube videos using `yt-dlp` and
    - Set the environment variable:
      ```bash
      export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+     export GEMINI_MODEL="gemini-flash-latest"
      ```
-   - Or edit the script and add your key to `GEMINI_API_KEY` in `main.py`,`all.py`,`app.py`.
+   - Or edit the script and add your key to `GEMINI_API_KEY` and `GEMINI_MODEL` in `main.py`,`all.py`,`app.py`.
 
 
 ## About `all.py`
