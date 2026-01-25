@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-mac = ["py2app>=0.28.0"]
+mac = ["py2app>=0.28.0", "setuptools>=80.0.0"]
 
 [project.scripts]
 yt-transcript = "launcher:main"
