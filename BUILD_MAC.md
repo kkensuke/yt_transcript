@@ -1,10 +1,22 @@
 # Building macOS App
 
-## Quick Build
+## Quick Build (using uv)
+
+```bash
+# Install mac dependencies
+uv sync --extra mac
+
+# Build the app
+uv run python setup.py py2app
+
+# The app will be in dist/YT Transcript.app
+```
+
+## Quick Build (using pip)
 
 ```bash
 # Install dependencies
-pip install py2app
+pip install py2app setuptools
 
 # Build the app
 python setup.py py2app
