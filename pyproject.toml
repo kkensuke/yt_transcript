@@ -1,7 +1,7 @@
 [project]
 name = "yt-dlp-transcript"
 version = "0.1.0"
-description = "Add your description here"
+description = "YouTube transcript extractor with AI summarization"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -9,3 +9,9 @@ dependencies = [
     "uvicorn>=0.37.0",
     "yt-dlp>=2025.9.26",
 ]
+
+[project.optional-dependencies]
+mac = ["py2app>=0.28.0"]
+
+[project.scripts]
+yt-transcript = "launcher:main"
