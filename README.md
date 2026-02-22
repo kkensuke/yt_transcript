@@ -140,6 +140,53 @@ python main.py 'VIDEO_ID' --no-timestamps -o clean_transcript.md
 ```
 
 
+## Create a Zsh Alias
+You can create a function in your `.zshrc` to call the script with a much shorter command.
+```zsh
+you() {
+    if [ $# -lt 1 ]; then
+        echo "Usage: you [summary-lang] 'URL'"
+        echo "  summary-lang: en|ja|no|auto (default: auto)"
+        return 2
+    fi
+
+    # If only one argument, treat it as URL with auto language
+    if [ $# -eq 1 ]; then
+        lang="auto"
+        url="$1"
+    else
+        # Two or more arguments: first is language, rest is URL
+        lang="$1"; shift
+        url="$*"
+    fi
+
+    cd ~/Desktop
+    source <path_to>/venv/bin/activate || { echo "activating venv failed"; return 1; }
+
+    case "$lang" in
+        en) opts=(--summary-lang en) ;;
+        ja) opts=(--summary-lang ja) ;;
+        no) opts=(--no-summary) ;;
+        auto) opts=(--summary-lang auto) ;;
+        *) echo "Unknown option: $lang"; echo "Usage: you [lang] URL"; echo "  lang: en|ja|no|auto (default: auto)"; deac; return 2 ;;
+    esac
+
+    python <path_to>/yt_dlp_transcript/all.py "$url" "${opts[@]}"
+    rc=$?
+
+    deac
+    return $rc
+}
+```
+
+
+## Render Markdown with Quick Look
+`QLMarkdown` is a macOS Quick Look plugin that renders Markdown files. It allows you to preview the generated transcripts and summaries in a clean, readable format directly from the Finder.
+```zsh
+brew install --cask qlmarkdown
+```
+
+
 ## Troubleshooting
 ### Common Issues
 1. **"No transcripts found"**
