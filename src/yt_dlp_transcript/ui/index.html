@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>YouTube Transcript</title>
+  <style>/*__APP_STYLES__*/</style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" role="img">
+            <rect x="5" y="8" width="38" height="27" rx="8"></rect>
+            <path d="M21 17.5 32 23.5 21 29.5Z"></path>
+            <path class="brand-lines" d="M13 40h22M17 35v5M31 35v5"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>YouTube Transcript</h1>
+          <p>Turn YouTube captions into readable Markdown</p>
+        </div>
+      </div>
+      <div id="bridgeStatus" class="status-pill status-waiting" aria-live="polite">
+        <span class="status-dot"></span>
+        <span>Starting</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel input-panel" aria-labelledby="inputHeading">
+        <div class="section-heading">
+          <div>
+            <span class="section-label">New transcript</span>
+            <h2 id="inputHeading">Choose a video and set your options</h2>
+          </div>
+          <span id="versionLabel" class="version-label"></span>
+        </div>
+
+        <form id="extractForm" novalidate>
+          <div class="form-navigation">
+            <div class="tabs" role="tablist" aria-label="Transcript workflow">
+              <button
+                id="executeFormTab"
+                class="tab active"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="executeFormPanel"
+                data-form-tab="execute"
+              >Run</button>
+              <button
+                id="settingsFormTab"
+                class="tab"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="settingsFormPanel"
+                data-form-tab="settings"
+              >Settings</button>
+            </div>
+          </div>
+
+          <section
+            id="executeFormPanel"
+            class="form-tab-panel"
+            role="tabpanel"
+            aria-labelledby="executeFormTab"
+          >
+            <div class="workflow-block">
+              <label class="field-label field-label-large" for="videoUrl">YouTube video</label>
+              <p id="videoUrlHelp" class="field-description">
+                Enter a YouTube video URL or an 11-character video ID.
+              </p>
+              <input
+                id="videoUrl"
+                name="videoUrl"
+                type="text"
+                inputmode="url"
+                autocomplete="off"
+                spellcheck="false"
+                aria-describedby="videoUrlHelp urlError"
+                placeholder="Example: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                required
+              >
+              <p id="urlError" class="field-error hidden" role="alert"></p>
+            </div>
+
+            <div class="execution-summary" aria-live="polite">
+              <span>This run</span>
+              <strong id="runSummary">
+                Captions: Auto · Timestamps: on · Gemini summary: Auto-detect
+              </strong>
+            </div>
+
+            <button id="extractButton" class="button button-primary" type="submit" disabled>
+              <span class="button-icon" aria-hidden="true">→</span>
+              <span class="button-label">Create transcript and summary</span>
+            </button>
+            <p id="submitHelp" class="submit-help">Enter a YouTube video to get started.</p>
+          </section>
+
+          <section
+            id="settingsFormPanel"
+            class="form-tab-panel hidden"
+            role="tabpanel"
+            aria-labelledby="settingsFormTab"
+          >
+            <fieldset class="workflow-block">
+              <legend class="workflow-title">Output</legend>
+              <p class="workflow-description">
+                Choose what to create. You can change these settings and run the video again.
+              </p>
+
+              <div class="toggle-grid">
+                <label class="toggle-card" for="timestampsToggle">
+                  <span>
+                    <strong>Include timestamps</strong>
+                    <small>Show each paragraph's start time in the transcript.</small>
+                  </span>
+                  <span class="switch">
+                    <input id="timestampsToggle" type="checkbox" role="switch" checked>
+                    <span class="switch-track" aria-hidden="true"></span>
+                  </span>
+                </label>
+
+                <label class="toggle-card" for="summaryToggle">
+                  <span>
+                    <strong>Summarize with Gemini</strong>
+                    <small>Create a structured AI summary alongside the transcript.</small>
+                  </span>
+                  <span class="switch">
+                    <input
+                      id="summaryToggle"
+                      type="checkbox"
+                      role="switch"
+                      checked
+                      aria-controls="summaryOptions"
+                      aria-expanded="true"
+                    >
+                    <span class="switch-track" aria-hidden="true"></span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+
+            <section
+              id="summaryOptions"
+              class="summary-options"
+              aria-hidden="false"
+              aria-labelledby="summarySettingsHeading"
+            >
+              <div class="subsection-heading">
+                <span class="subsection-label">Gemini summary</span>
+                <h3 id="summarySettingsHeading">Summary settings</h3>
+                <p>
+                  These settings apply only when summarization is enabled. The defaults usually
+                  work well; provide an API key if one is not available in the environment.
+                </p>
+              </div>
+
+              <div class="field-grid">
+                <div class="field-block">
+                  <label class="field-label" for="summaryLanguage">Summary language</label>
+                  <p id="summaryLanguageHelp" class="field-description">
+                    Choose the language Gemini should use for the summary.
+                  </p>
+                  <select id="summaryLanguage" aria-describedby="summaryLanguageHelp">
+                    <option value="auto">Auto-detect</option>
+                    <option value="ja">Japanese</option>
+                    <option value="en">English</option>
+                  </select>
+                </div>
+
+                <div class="field-block">
+                  <label class="field-label" for="geminiModel">Gemini Model ID</label>
+                  <p id="geminiModelHelp" class="field-description">
+                    The model ID sent to the Google Gemini API.
+                  </p>
+                  <input
+                    id="geminiModel"
+                    type="text"
+                    spellcheck="false"
+                    aria-describedby="geminiModelHelp geminiModelSource"
+                    placeholder="Example: gemini-flash-latest"
+                  >
+                  <p id="geminiModelSource" class="field-status">Checking the configuration source.</p>
+                </div>
+              </div>
+
+              <div id="apiKeySource" class="config-source config-source-neutral" role="status">
+                <span class="config-source-label">API key in use</span>
+                <strong id="apiKeySourceTitle">Checking configuration</strong>
+                <p id="apiKeySourceDescription">
+                  Checking whether GEMINI_API_KEY is available in the environment.
+                </p>
+              </div>
+
+              <div class="field-block api-key-field">
+                <label id="apiKeyLabel" class="field-label" for="apiKey">Gemini API key</label>
+                <p id="apiKeyHelp" class="field-description">
+                  Enter a key from Google AI Studio. It is never saved and is used only for this run.
+                </p>
+                <div class="input-with-action">
+                  <input
+                    id="apiKey"
+                    type="password"
+                    autocomplete="off"
+                    spellcheck="false"
+                    aria-describedby="apiKeyHelp apiKeyNote apiKeyError"
+                    placeholder="Enter a Gemini API key"
+                  >
+                  <button
+                    id="apiKeyVisibilityButton"
+                    class="button button-secondary input-action"
+                    type="button"
+                    aria-controls="apiKey"
+                    aria-pressed="false"
+                  >Show</button>
+                </div>
+                <p id="apiKeyError" class="field-error hidden" role="alert"></p>
+                <p id="apiKeyNote" class="privacy-note">
+                  The value is discarded when you quit the app.
+                </p>
+              </div>
+            </section>
+
+            <details class="advanced-options">
+              <summary>
+                <span class="summary-title">
+                  <strong>Advanced caption settings</strong>
+                  <small>Change these only if captions cannot be retrieved.</small>
+                </span>
+              </summary>
+              <div class="advanced-content field-grid">
+                <div class="field-block">
+                  <label class="field-label" for="captionLanguage">
+                    Preferred caption language
+                  </label>
+                  <p id="captionLanguageHelp" class="field-description">
+                    The language to try first for manual and auto-generated captions.
+                  </p>
+                  <select id="captionLanguage" aria-describedby="captionLanguageHelp">
+                    <option value="auto">Auto</option>
+                    <option value="ja">Prefer Japanese</option>
+                    <option value="en">Prefer English</option>
+                  </select>
+                </div>
+
+                <div class="field-block">
+                  <label class="field-label" for="cookieBrowser">Browser for cookies</label>
+                  <p id="cookieBrowserHelp" class="field-description">
+                    For age-restricted or unlisted videos that require a login.
+                  </p>
+                  <select id="cookieBrowser" aria-describedby="cookieBrowserHelp">
+                    <option value="">Do not use (recommended)</option>
+                    <option value="chrome">Chrome</option>
+                    <option value="safari">Safari</option>
+                    <option value="firefox">Firefox</option>
+                    <option value="edge">Edge</option>
+                    <option value="brave">Brave</option>
+                    <option value="chromium">Chromium</option>
+                  </select>
+                </div>
+              </div>
+            </details>
+          </section>
+        </form>
+      </section>
+
+      <section id="progressPanel" class="panel progress-panel hidden" aria-live="polite">
+        <div class="progress-copy">
+          <div class="progress-spinner" aria-hidden="true"></div>
+          <div>
+            <strong>Processing</strong>
+            <p id="progressMessage">Preparing…</p>
+          </div>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <p class="progress-note">
+          Processing may take several seconds depending on the video length and summary settings.
+        </p>
+      </section>
+
+      <section id="errorPanel" class="panel error-panel hidden" role="alert">
+        <div class="error-icon" aria-hidden="true">!</div>
+        <div>
+          <strong id="errorTitle">Could not complete the request</strong>
+          <p id="errorMessage"></p>
+          <p id="errorHint" class="error-hint"></p>
+        </div>
+      </section>
+
+      <section id="resultPanel" class="panel result-panel hidden" aria-labelledby="resultTitle">
+        <div class="result-header">
+          <div class="result-title-wrap">
+            <span class="success-mark" aria-hidden="true">✓</span>
+            <div>
+              <span class="section-label">Complete</span>
+              <h2 id="resultTitle"></h2>
+              <p id="resultMeta" class="result-meta"></p>
+            </div>
+          </div>
+          <button id="openVideoButton" class="button button-secondary" type="button">
+            Open on YouTube ↗
+          </button>
+        </div>
+
+        <div id="warningBanner" class="warning-banner hidden" role="status"></div>
+
+        <div class="result-toolbar">
+          <div class="tabs" role="tablist" aria-label="Result to display">
+            <button
+              id="transcriptTab"
+              class="tab active"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              data-tab="transcript"
+            >Transcript</button>
+            <button
+              id="summaryTab"
+              class="tab hidden"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              data-tab="summary"
+            >Gemini summary</button>
+          </div>
+          <div class="result-actions">
+            <button id="copyButton" class="button button-secondary" type="button">Copy</button>
+            <button id="saveButton" class="button button-primary-small" type="button">
+              Save Markdown
+            </button>
+          </div>
+        </div>
+
+        <article id="markdownOutput" class="markdown-output" tabindex="0"></article>
+      </section>
+    </main>
+  </div>
+
+  <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script>/*__APP_SCRIPT__*/</script>
+</body>
+</html>

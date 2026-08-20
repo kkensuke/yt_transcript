@@ -1,11 +1,48 @@
+[build-system]
+requires = ["setuptools>=77,<82"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "yt-dlp-transcript"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.2.0"
+description = "CLI and macOS desktop app for extracting YouTube transcripts"
 readme = "README.md"
-requires-python = ">=3.13"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11,<3.14"
 dependencies = [
-    "fastapi[standard]>=0.128.0",
-    "uvicorn>=0.37.0",
-    "yt-dlp>=2025.9.26",
+    "yt-dlp>=2026.7.4",
 ]
+
+[project.optional-dependencies]
+desktop = [
+    "pywebview>=6.2.1,<7",
+]
+dev = [
+    "pytest>=8.4,<10",
+    "ruff>=0.12,<1",
+]
+
+[project.scripts]
+yt-transcript = "yt_dlp_transcript.cli:main"
+
+[project.gui-scripts]
+yt-transcript-app = "yt_dlp_transcript.desktop:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"yt_dlp_transcript.ui" = ["*.html", "*.css", "*.js"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

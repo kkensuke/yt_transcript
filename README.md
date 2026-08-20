@@ -1,213 +1,175 @@
-# YouTube Transcript Extractor with Gemini Summarization
+# YouTube Transcript
 
-A Python script that extracts transcripts from YouTube videos using `yt-dlp` and converts them to clean, readable Markdown format. Includes optional AI-powered summarization using Google's Gemini API.
+YouTube Transcript is a command-line tool and macOS desktop app that turns YouTube captions into readable Markdown, with optional Gemini summarization. The CLI and desktop UI share the same extraction and summarization code.
+
+The desktop app uses the `pywebview` JavaScript–Python bridge and runs locally in a native desktop window. A distributable macOS `.app` can bundle Python and all runtime dependencies.
 
 ## Features
-- 🔗 **Robust YouTube URL handling** various URL formats and video IDs
-- 🎥 **Reliable transcript extraction** using yt-dlp
-- 📝 **Clean Markdown output** with optional timestamps
-- 🤖 **AI summarization** powered by Gemini API
-- 🌐 **Multi-language support** (optimized for English and Japanese)
 
+- Extract manual or auto-generated captions from a YouTube URL or 11-character video ID
+- Prefer Japanese or English captions, or select a language automatically
+- Create Markdown with or without timestamps
+- Summarize in Japanese, English, or an automatically detected language with Gemini
+- Select a Gemini Model ID from the CLI or desktop UI
+- Use browser cookies for unlisted or age-restricted videos
+- Preview, copy, and save results from the desktop app
 
-## Installation
-1. **Install Python dependencies:**
-   ```bash
-   pip install yt-dlp
-   
-   # Optional: FastAPI
-   pip install fastapi uvicorn
-   ```
+## Requirements
 
-2. **Download the script:**
-   ```bash
-   git clone https://github.com/kkensuke/yt_dlp_transcript
-   cd yt_dlp_transcript
-   ```
+- CLI or source-based desktop app: Python 3.11–3.13 and [uv](https://docs.astral.sh/uv/)
+- Building the macOS app: macOS 11 or later
+- Gemini summarization: a Gemini API key; caption extraction works without one
 
-3. **Optional - Set up Gemini API (for summaries):**
-   - Get a Gemini API key from [Google AI Studio](https://makersuite.google.com/)
-   - Set the environment variable:
-     ```bash
-     export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-     export GEMINI_MODEL="gemini-flash-latest"
-     ```
-   - Or edit the script and add your key to `GEMINI_API_KEY` and `GEMINI_MODEL` in `main.py`,`all.py`,`app.py`.
-
-
-## About `all.py`
-`all.py` is a single file that just combines all the project files together. You can use either `main.py` or `all.py` to run the script.
-
-## About `app.py`
-`app.py` is a simple FastAPI web app that provides a web interface for the transcript extraction and summarization functionality. You can run it with:
 ```bash
-python app.py
+git clone https://github.com/kkensuke/yt_dlp_transcript.git
+cd yt_dlp_transcript
 ```
-Then open your browser and go to `http://localhost:8000` to use the web interface.
 
-![](screenshot.png)
+## CLI
 
+A CLI-only environment does not install `pywebview`.
 
-## Usage
-### Usage of GUI
-1. Run the FastAPI app:
-   ```bash
-   python app.py
-   ```
-2. Open your browser and go to `http://localhost:8000`
-3. Enter the YouTube URL or video ID and click "Extract Transcript". About 10-20 seconds later, the transcript and summary (if enabled) will be displayed.
-
-### Basic Usage of CUI
 ```bash
-# Extract transcript from YouTube URL
-python main.py 'https://www.youtube.com/watch?v=VIDEO_ID'
+# Transcript and Gemini summary when GEMINI_API_KEY is available
+export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+uv run yt-transcript "https://www.youtube.com/watch?v=VIDEO_ID"
 
-# Or use just the video ID
-python main.py 'VIDEO_ID'
+# Transcript only
+uv run yt-transcript "VIDEO_ID" --no-summary
+
+# Prefer Japanese captions and omit timestamps
+uv run yt-transcript "VIDEO_ID" --caption-lang ja --no-timestamps
+
+# Use Chrome cookies for a restricted video
+uv run yt-transcript "VIDEO_ID" --cookies-from-browser chrome
+
+# Select a Gemini Model ID from the CLI
+uv run yt-transcript "VIDEO_ID" --gemini-model "gemini-flash-latest"
+
+# Choose an output path
+uv run yt-transcript "VIDEO_ID" --output output/transcript.md
 ```
 
-The script generates up to two files:
-1. **`{video_id}_transcript.md`** - Full transcript with timestamps
-2. **`{video_id}_summarized.md`** - AI-generated summary (if Gemini API is configured)
+### CLI options
 
-
-### Advanced Options
-```bash
-# Remove timestamps from output
-python main.py 'VIDEO_URL' --no-timestamps
-
-# Skip AI summary generation
-python main.py 'VIDEO_URL' --no-summary
-
-# Specify summary language
-python main.py 'VIDEO_URL' --summary-lang ja  # Japanese
-python main.py 'VIDEO_URL' --summary-lang en  # English
-
-# Custom output filename
-python main.py 'VIDEO_URL' -o my_transcript.md
-```
-
-
-## Sample Output Structure
-```markdown
-# Video Title
-
-**Video ID:** ABC123  
-**YouTube URL:** https://www.youtube.com/watch?v=ABC123
-
----
-
-**[00:00:15]** Welcome to this tutorial about Python programming...
-
-**[00:01:30]** In this section, we'll cover the basics of variables...
-```
-
-Transcripts longer than 50,000 characters are truncated for summarization by default. This limit can be adjusted in `main.py`,`all.py`, and `app.py` by changing the `MAX_SUMMARY_LENGTH` variable.
-
-
-## Command Line Options
 | Option | Description |
-|--------|-------------|
-| `url` | YouTube URL or video ID (required) |
-| `-o, --output` | Custom output filename |
-| `--no-timestamps` | Exclude timestamps from transcript |
-| `--no-summary` | Skip AI summary generation |
-| `--summary-lang` | Summary language: `auto`, `en`, `ja` |
+|---|---|
+| `url` | YouTube URL or 11-character video ID |
+| `-o`, `--output PATH` | Transcript Markdown output path |
+| `--no-timestamps` | Omit paragraph timestamps |
+| `--no-summary` | Skip Gemini summarization |
+| `--summary-lang {auto,en,ja}` | Summary language |
+| `--caption-lang {auto,en,ja}` | Preferred caption language |
+| `--cookies-from-browser BROWSER` | Use cookies from `chrome`, `chromium`, `edge`, `firefox`, `safari`, or `brave` |
+| `--gemini-model MODEL_ID` | Gemini Model ID for summarization |
 
+Run `uv run yt-transcript --help` to see the complete CLI help.
 
-## Language Support
-The script automatically detects video language and:
-- **Japanese videos**: Removes music tags, cleans spacing between characters
-- **English videos**: Standard text cleaning and formatting
-- **Auto-detection**: Based on title and description content
-- **Summary language**: Set to English by default, or Japanese for Japanese videos
+The CLI attempts summarization by default. If `GEMINI_API_KEY` is missing or summarization fails, the transcript is still saved and the reason is shown as a warning. A summary is saved next to the transcript as `<VIDEO_ID>_summarized.md`.
 
+The Gemini Model ID is selected in this order:
 
-## Examples
-### Extract English video transcript:
+1. `--gemini-model`
+2. `GEMINI_MODEL`
+3. The built-in default, `gemini-flash-lite-latest`
+
+The API key cannot be passed as a command-line argument. Set `GEMINI_API_KEY` for CLI use so the key does not appear in the command history.
+
+## Desktop app
+
+### Run from source
+
 ```bash
-python main.py 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+./scripts/run-app.sh
 ```
 
-### Extract Japanese video with English summary:
+The launcher syncs the `desktop` extra, starts the current code directly from `src/`, and opens it in a native desktop window.
+
+Gemini summarization is enabled by default. Disable it in Settings to create only a transcript. To summarize, either enter an API key in Settings or define it before launching the app:
+
 ```bash
-python main.py 'https://www.youtube.com/watch?v=JAPANESE_VIDEO_ID' --summary-lang en
+export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+export GEMINI_MODEL="gemini-flash-latest"  # Optional
+./scripts/run-app.sh
 ```
 
-### Clean transcript without timestamps:
+Settings shows whether the API key and model came from the environment or the app default, but it never reveals the environment API key. A key or Model ID entered in the UI overrides the environment for that run only and is never saved.
+
+### Build the macOS `.app`
+
+py2app cannot cross-compile, so build the app on macOS:
+
 ```bash
-python main.py 'VIDEO_ID' --no-timestamps -o clean_transcript.md
+./scripts/build-macos-app.sh
+open dist/YouTubeTranscript.app
 ```
 
+The bundle is created at `dist/YouTubeTranscript.app`. It includes Python and its runtime dependencies, so users do not need to install Python or uv.
 
-## Create a Zsh Alias
-You can create a function in your `.zshrc` to call the script with a much shorter command.
-```zsh
-you() {
-    if [ $# -lt 1 ]; then
-        echo "Usage: you [summary-lang] 'URL'"
-        echo "  summary-lang: en|ja|no|auto (default: auto)"
-        return 2
-    fi
+### Environment variables and the `.app`
 
-    # If only one argument, treat it as URL with auto language
-    if [ $# -eq 1 ]; then
-        lang="auto"
-        url="$1"
-    else
-        # Two or more arguments: first is language, rest is URL
-        lang="$1"; shift
-        url="$*"
-    fi
+When environment variables are set in a terminal and the app is opened from that same terminal, the app reads `GEMINI_API_KEY` and `GEMINI_MODEL`:
 
-    cd ~/Desktop
-    source <path_to>/venv/bin/activate || { echo "activating venv failed"; return 1; }
-
-    case "$lang" in
-        en) opts=(--summary-lang en) ;;
-        ja) opts=(--summary-lang ja) ;;
-        no) opts=(--no-summary) ;;
-        auto) opts=(--summary-lang auto) ;;
-        *) echo "Unknown option: $lang"; echo "Usage: you [lang] URL"; echo "  lang: en|ja|no|auto (default: auto)"; deac; return 2 ;;
-    esac
-
-    python <path_to>/yt_dlp_transcript/all.py "$url" "${opts[@]}"
-    rc=$?
-
-    deac
-    return $rc
-}
+```bash
+export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+export GEMINI_MODEL="gemini-flash-latest"  # Optional
+open dist/YouTubeTranscript.app
 ```
 
+When the `.app` is opened directly from Finder or Launchpad, shell environment variables are normally not inherited. Enter `GEMINI_API_KEY` in Settings each time you launch the app. The key is not saved and is discarded when the app quits.
 
-## Render Markdown with Quick Look
-`QLMarkdown` is a macOS Quick Look plugin that renders Markdown files. It allows you to preview the generated transcripts and summaries in a clean, readable format directly from the Finder.
-```zsh
-brew install --cask qlmarkdown
+After changing an environment variable, quit any running instance completely before opening the app again from the same terminal.
+
+### Distribution
+
+An unsigned app triggers a macOS Gatekeeper warning. General distribution requires signing with a Developer ID certificate from the Apple Developer Program and notarization by Apple. See Apple's [Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).
+
+## Captions and browser cookies
+
+Try caption extraction without cookies first. Use `--cookies-from-browser` in the CLI or Advanced caption settings in the desktop app only when a video requires a signed-in session, such as an age-restricted or unlisted video.
+
+## Development and verification
+
+```bash
+uv sync --extra dev
+uv run --extra dev pytest
+uv run --extra dev ruff check .
+./scripts/run-app.sh --check
 ```
 
+Automated tests do not contact YouTube. Results can vary with YouTube changes, region, rate limits, and login state, so test a public video with captions manually before release.
 
 ## Troubleshooting
-### Common Issues
-1. **"No transcripts found"**
-   - Video may not have subtitles/captions available
-   - Try videos from educational channels or popular creators
 
-2. **Gemini API errors**
-   - Check your API key is valid
-   - Ensure you have quota remaining
+### No captions are found
 
-3. **yt-dlp extraction fails**
-   - Update yt-dlp: `pip install -U yt-dlp`
-   - Exceed rate limits on YouTube. Try next day.
+- Confirm that the video has manual or auto-generated captions
+- Set the caption language to `auto`
+- Update `yt-dlp`: `uv lock --upgrade-package yt-dlp && uv sync`
 
-### Browser Cookies
-The script uses Chrome browser cookies for better access. Ensure Chrome is installed for optimal results.
+### `HTTP 429` appears
 
+YouTube is temporarily rate-limiting caption requests. Wait and try again. If the problem persists, select cookies from a signed-in browser.
+
+### Only Gemini summarization fails
+
+- Check the API key, Model ID, and quota
+- The transcript remains available to save or copy; review the warning and try summarization again
+
+### The `.app` does not launch
+
+Run the executable from a terminal to view its log:
+
+```bash
+./dist/YouTubeTranscript.app/Contents/MacOS/YouTubeTranscript
+```
+
+## Technical references
+
+- [pywebview JavaScript–Python bridge](https://pywebview.flowrl.com/guide/interdomain.html)
+- [pywebview freezing](https://pywebview.flowrl.com/guide/freezing.html)
+- [py2app tutorial](https://py2app.readthedocs.io/en/latest/tutorial.html)
 
 ## License
-This script is provided as-is for educational and personal use.
 
-
-## Contributing
-Feel free to submit issues and enhancement requests!
+This project is licensed under the [MIT License](LICENSE). Third-party dependencies remain under their respective licenses.
