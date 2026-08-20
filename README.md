@@ -77,6 +77,9 @@ The API key cannot be passed as a command-line argument. Set `GEMINI_API_KEY` fo
 
 ## Desktop app
 
+<img src="example.png" alt="Example desktop app window" width="500" align="center"/>
+
+
 ### Run from source
 
 ```bash
