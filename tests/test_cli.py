@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import pytest
-
 from yt_transcript.cli import _transcript_output_path, build_parser
 
 
@@ -22,17 +20,11 @@ def test_cli_supports_output_directory() -> None:
     )
 
 
-def test_cli_rejects_output_and_output_directory_together() -> None:
-    with pytest.raises(SystemExit):
-        build_parser().parse_args(
-            ["dQw4w9WgXcQ", "--output", "transcript.md", "--output-dir", "output"]
-        )
-
-
 def test_cli_help_lists_all_extended_options() -> None:
     help_text = build_parser().format_help()
 
     assert "--gemini-model" in help_text
     assert "--output-dir" in help_text
+    assert "--output " not in help_text
     assert "--caption-lang" in help_text
     assert "--cookies-from-browser" in help_text

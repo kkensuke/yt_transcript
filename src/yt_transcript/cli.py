@@ -16,9 +16,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Extract YouTube captions as Markdown.",
     )
     parser.add_argument("url", help="YouTube URL or 11-character video ID")
-    output_group = parser.add_mutually_exclusive_group()
-    output_group.add_argument("-o", "--output", type=Path, help="Transcript output path")
-    output_group.add_argument(
+    parser.add_argument(
         "--output-dir",
         type=Path,
         help="Directory for <VIDEO_ID>_transcript.md and <VIDEO_ID>_summarized.md",
@@ -51,8 +49,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _transcript_output_path(args: argparse.Namespace, video_id: str) -> Path:
-    if args.output:
-        return args.output
     output_dir = args.output_dir or Path.cwd()
     return output_dir / f"{video_id}_transcript.md"
 
