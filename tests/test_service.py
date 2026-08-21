@@ -1,7 +1,7 @@
-from yt_dlp_transcript import service
-from yt_dlp_transcript.errors import GeminiApiError, InvalidVideoError
-from yt_dlp_transcript.service import ExtractionOptions
-from yt_dlp_transcript.youtube import CaptionTrack, VideoMetadata
+from yt_transcript import service
+from yt_transcript.errors import GeminiApiError, InvalidVideoError
+from yt_transcript.service import ExtractionOptions
+from yt_transcript.youtube import CaptionTrack, VideoMetadata
 
 
 def test_options_validate_bridge_payload() -> None:

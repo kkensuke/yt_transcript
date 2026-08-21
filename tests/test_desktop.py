@@ -1,6 +1,7 @@
 import re
 
-from yt_dlp_transcript.desktop import DesktopApi, load_ui_html
+from yt_transcript import desktop
+from yt_transcript.desktop import DesktopApi, load_ui_html
 
 
 def test_ui_assets_are_inlined_without_external_dependencies() -> None:
@@ -26,7 +27,7 @@ def test_ui_explains_each_setting_before_its_control() -> None:
         assert html.index(label) < html.index(control)
     assert "GEMINI_API_KEY" in html
     assert "Using environment variable ${apiKeyVariable}" in html
-    assert "prefers-color-scheme: dark" not in html
+    assert "prefers-color-scheme: dark" in html
     assert "linear-gradient" not in html
 
 
@@ -73,6 +74,17 @@ def test_ui_enables_gemini_summary_by_default() -> None:
     assert 'aria-hidden="false"' in summary_options.group("attrs")
 
 
+def test_ui_supports_zoom_shortcuts_and_model_discovery() -> None:
+    html = load_ui_html()
+
+    assert 'event.key === "=" || event.key === "+"' in html
+    assert 'event.key === "-"' in html
+    assert 'event.key === "0"' in html
+    assert "Load available models" in html
+    assert "geminiModelOptions" in html
+    assert "list_gemini_models" in html
+
+
 def test_app_info_names_environment_sources_without_exposing_api_key(monkeypatch) -> None:
     monkeypatch.setenv("GEMINI_API_KEY", "super-secret-key")
     monkeypatch.setenv("GEMINI_MODEL", "gemini-test-model")
@@ -98,3 +110,19 @@ def test_app_info_identifies_unconfigured_defaults(monkeypatch) -> None:
     assert info["api_key_source"] == "not_configured"
     assert info["gemini_model_source"] == "default"
     assert info["gemini_model"]
+
+
+def test_desktop_lists_models_without_exposing_environment_key(monkeypatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "environment-secret")
+    observed = []
+    monkeypatch.setattr(
+        desktop,
+        "fetch_gemini_models",
+        lambda key: observed.append(key) or ["gemini-flash-latest"],
+    )
+
+    response = DesktopApi().list_gemini_models()
+
+    assert response == {"ok": True, "models": ["gemini-flash-latest"]}
+    assert observed == ["environment-secret"]
+    assert "environment-secret" not in repr(response)

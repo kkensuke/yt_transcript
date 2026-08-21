@@ -23,6 +23,8 @@ def test_run_app_script_launches_the_current_source_without_editable_install() -
     assert "uv sync --no-install-project --extra desktop --inexact" in script
     assert 'export PYTHONPATH="$PROJECT_ROOT/src' in script
     assert 'uv run --no-sync python "$PROJECT_ROOT/YouTubeTranscript.py"' in script
+    assert 'src" / "yt_transcript"' in script
+    assert "import yt_transcript" in script
     assert "actual == expected" in script
     assert "uv run --no-editable" not in script
     assert "--reinstall-package" not in script
@@ -42,16 +44,28 @@ def test_desktop_dependency_is_optional_for_cli_users() -> None:
     )
 
 
+def test_project_entry_points_use_clean_python_package_name() -> None:
+    config = tomllib.loads(PROJECT_CONFIG.read_text(encoding="utf-8"))
+
+    assert config["project"]["scripts"]["yt-transcript"] == "yt_transcript.cli:main"
+    assert config["project"]["gui-scripts"]["yt-transcript-app"] == "yt_transcript.desktop:main"
+    assert "yt_transcript.ui" in config["tool"]["setuptools"]["package-data"]
+
+
 def test_readme_documents_cli_and_desktop_configuration() -> None:
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
 
     assert "./scripts/run-app.sh" in readme
     assert "./scripts/run-app.sh --check" in readme
     assert "--gemini-model" in readme
+    assert "--output-dir" in readme
     assert "GEMINI_MODEL" in readme
+    assert "Load available models" in readme
+    assert "Command" in readme and "dark mode" in readme.lower()
     assert "open dist/YouTubeTranscript.app" in readme
     assert "Finder" in readme
     assert "each time you launch the app" in readme
+    assert "yt_transcript" in readme
 
 
 def test_build_app_script_has_valid_shell_syntax_and_expected_bundle_path() -> None:
@@ -69,6 +83,7 @@ def test_macos_bundle_keeps_filename_and_display_name_distinct() -> None:
 
     assert '"CFBundleName": "YouTubeTranscript"' in setup_text
     assert '"CFBundleDisplayName": "YouTube Transcript"' in setup_text
+    assert '"packages": ["yt_transcript", "yt_dlp", "webview"]' in setup_text
     assert '"resources": [str(PROJECT_ROOT / "LICENSE")]' in setup_text
 
 
