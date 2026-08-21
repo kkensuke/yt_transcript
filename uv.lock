@@ -300,7 +300,7 @@ wheels = [
 ]
 
 [[package]]
-name = "yt-dlp-transcript"
+name = "yt-transcript"
 version = "0.2.0"
 source = { editable = "." }
 dependencies = [
