@@ -15,7 +15,7 @@ The desktop app uses the `pywebview` JavaScript–Python bridge and runs locally
 - Save transcript and summary files together with `--output-dir`
 - Use browser cookies for unlisted or age-restricted videos
 - Preview, copy, and save results from the desktop app
-- Follow the macOS light/dark appearance automatically
+- Start with the macOS appearance, then switch between Light and Dark in the app
 - Zoom the desktop UI with Command+=, Command+-, and Command+0
 
 ## Requirements
@@ -113,7 +113,7 @@ In Settings, select **Load available models** to query the Gemini Models API. Th
 
 ### Appearance and zoom
 
-The desktop UI follows the macOS light/dark appearance automatically. Dark mode is therefore enabled whenever macOS uses its dark appearance; no separate theme setting is required.
+When the app opens, it reads the current macOS appearance once and starts in the matching Light or Dark theme. While the app is open, use the **Light** and **Dark** controls in the header to switch manually. The manual choice is intentionally session-only: the next launch starts from the current macOS appearance again.
 
 Use these keyboard shortcuts to change the UI scale:
 
