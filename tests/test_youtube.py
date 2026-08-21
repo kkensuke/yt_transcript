@@ -3,8 +3,8 @@ import urllib.error
 
 import pytest
 
-from yt_dlp_transcript.errors import NoTranscriptError, TranscriptDownloadError
-from yt_dlp_transcript.youtube import (
+from yt_transcript.errors import NoTranscriptError, TranscriptDownloadError
+from yt_transcript.youtube import (
     CaptionTrack,
     VideoMetadata,
     _select_caption_track,

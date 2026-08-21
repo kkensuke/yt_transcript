@@ -2,7 +2,7 @@
 
 from functools import wraps
 
-_PATCH_FLAG = "_yt_dlp_transcript_builtin_zlib_patch"
+_PATCH_FLAG = "_yt_transcript_builtin_zlib_patch"
 _BUILTIN_ZLIB_MARKER = "__py2app_builtin_zlib__"
 
 

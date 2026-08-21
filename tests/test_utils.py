@@ -1,4 +1,4 @@
-from yt_dlp_transcript.utils import (
+from yt_transcript.utils import (
     clean_japanese_text,
     detect_language,
     format_timestamp,

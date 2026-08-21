@@ -16,7 +16,13 @@ def build_parser() -> argparse.ArgumentParser:
         description="Extract YouTube captions as Markdown.",
     )
     parser.add_argument("url", help="YouTube URL or 11-character video ID")
-    parser.add_argument("-o", "--output", type=Path, help="Transcript output path")
+    output_group = parser.add_mutually_exclusive_group()
+    output_group.add_argument("-o", "--output", type=Path, help="Transcript output path")
+    output_group.add_argument(
+        "--output-dir",
+        type=Path,
+        help="Directory for <VIDEO_ID>_transcript.md and <VIDEO_ID>_summarized.md",
+    )
     parser.add_argument("--no-timestamps", action="store_true", help="Omit timestamps")
     parser.add_argument("--no-summary", action="store_true", help="Skip Gemini summarization")
     parser.add_argument(
@@ -44,6 +50,13 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _transcript_output_path(args: argparse.Namespace, video_id: str) -> Path:
+    if args.output:
+        return args.output
+    output_dir = args.output_dir or Path.cwd()
+    return output_dir / f"{video_id}_transcript.md"
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     options = ExtractionOptions(
@@ -67,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Hint: {exc.hint}", file=sys.stderr)
         return 1
 
-    transcript_path = args.output or Path(f"{result.video_id}_transcript.md")
+    transcript_path = _transcript_output_path(args, result.video_id)
     transcript_path.parent.mkdir(parents=True, exist_ok=True)
     transcript_path.write_text(result.transcript, encoding="utf-8")
     print(f"Transcript saved to: {transcript_path}")

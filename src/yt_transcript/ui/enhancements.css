@@ -1,0 +1,116 @@
+:root {
+  color-scheme: light dark;
+}
+
+.model-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.model-load-button {
+  min-height: 36px;
+  padding-inline: 12px;
+}
+
+.model-list-status {
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+
+.zoom-indicator {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1000;
+  padding: 7px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.zoom-indicator.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #10151b;
+    --surface: #171e26;
+    --surface-muted: #1d2630;
+    --surface-blue: #172536;
+    --border: #344250;
+    --border-strong: #526273;
+    --text: #eef3f8;
+    --text-muted: #c0cad5;
+    --text-subtle: #9eabb8;
+    --primary: #72b7ff;
+    --primary-hover: #98caff;
+    --primary-soft: #183b5c;
+    --focus: #72b7ff;
+    --success: #78d69d;
+    --success-soft: #173525;
+    --warning: #f0c96c;
+    --warning-soft: #3b3016;
+    --danger: #ff9898;
+    --danger-soft: #421f24;
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  }
+
+  input::placeholder {
+    color: #8e9aa7;
+  }
+
+  input:hover,
+  select:hover {
+    border-color: #77899b;
+  }
+
+  input:disabled,
+  select:disabled {
+    color: #8f9ba7;
+    background: #242e38;
+  }
+
+  .button:disabled,
+  .button-primary:disabled {
+    color: #8996a3;
+    border-color: #3d4a57;
+    background: #2a343e;
+  }
+
+  .button-secondary {
+    border-color: #4f81ad;
+  }
+
+  .switch-track {
+    border-color: #697784;
+    background: #596674;
+  }
+
+  .summary-options {
+    border-color: #3d6d98;
+  }
+
+  .config-source-ready {
+    border-color: #47795b;
+  }
+
+  .config-source-missing {
+    border-color: #76612a;
+  }
+
+  a {
+    color: #8bc4ff;
+  }
+}

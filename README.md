@@ -10,15 +10,19 @@ The desktop app uses the `pywebview` JavaScript–Python bridge and runs locally
 - Prefer Japanese or English captions, or select a language automatically
 - Create Markdown with or without timestamps
 - Summarize in Japanese, English, or an automatically detected language with Gemini
+- Load the currently available Gemini `generateContent` models in the desktop UI
 - Select a Gemini Model ID from the CLI or desktop UI
+- Save transcript and summary files together with `--output-dir`
 - Use browser cookies for unlisted or age-restricted videos
 - Preview, copy, and save results from the desktop app
+- Follow the macOS light/dark appearance automatically
+- Zoom the desktop UI with Command+=, Command+-, and Command+0
 
 ## Requirements
 
 - CLI or source-based desktop app: Python 3.11–3.13 and [uv](https://docs.astral.sh/uv/)
 - Building the macOS app: macOS 11 or later
-- Gemini summarization: a Gemini API key; caption extraction works without one
+- Gemini summarization and model discovery: a Gemini API key; caption extraction works without one
 
 ```bash
 git clone https://github.com/kkensuke/yt_dlp_transcript.git
@@ -46,7 +50,10 @@ uv run yt-transcript "VIDEO_ID" --cookies-from-browser chrome
 # Select a Gemini Model ID from the CLI
 uv run yt-transcript "VIDEO_ID" --gemini-model "gemini-flash-latest"
 
-# Choose an output path
+# Recommended when writing files to another directory
+uv run yt-transcript "VIDEO_ID" --output-dir output/
+
+# Choose an exact transcript file path instead
 uv run yt-transcript "VIDEO_ID" --output output/transcript.md
 ```
 
@@ -55,13 +62,16 @@ uv run yt-transcript "VIDEO_ID" --output output/transcript.md
 | Option | Description |
 |---|---|
 | `url` | YouTube URL or 11-character video ID |
-| `-o`, `--output PATH` | Transcript Markdown output path |
+| `-o`, `--output PATH` | Exact transcript Markdown output path |
+| `--output-dir DIR` | Directory for `<VIDEO_ID>_transcript.md` and `<VIDEO_ID>_summarized.md` |
 | `--no-timestamps` | Omit paragraph timestamps |
 | `--no-summary` | Skip Gemini summarization |
 | `--summary-lang {auto,en,ja}` | Summary language |
 | `--caption-lang {auto,en,ja}` | Preferred caption language |
 | `--cookies-from-browser BROWSER` | Use cookies from `chrome`, `chromium`, `edge`, `firefox`, `safari`, or `brave` |
 | `--gemini-model MODEL_ID` | Gemini Model ID for summarization |
+
+`--output` and `--output-dir` are mutually exclusive. With `--output-dir output/`, files are saved as `output/<VIDEO_ID>_transcript.md` and, when summarization succeeds, `output/<VIDEO_ID>_summarized.md`.
 
 Run `uv run yt-transcript --help` to see the complete CLI help.
 
@@ -97,6 +107,20 @@ export GEMINI_MODEL="gemini-flash-latest"  # Optional
 
 Settings shows whether the API key and model came from the environment or the app default, but it never reveals the environment API key. A key or Model ID entered in the UI overrides the environment for that run only and is never saved.
 
+### Available Gemini models
+
+In Settings, select **Load available models** to query the Gemini Models API. The app lists only models that advertise support for `generateContent`. The current text field remains editable, so a Model ID can still be entered manually. If `GEMINI_API_KEY` is already configured, the app also attempts to load the list when the desktop bridge becomes ready.
+
+### Appearance and zoom
+
+The desktop UI follows the macOS light/dark appearance automatically. Dark mode is therefore enabled whenever macOS uses its dark appearance; no separate theme setting is required.
+
+Use these keyboard shortcuts to change the UI scale:
+
+- `Command` + `=`: zoom in
+- `Command` + `-`: zoom out
+- `Command` + `0`: reset to 100%
+
 ### Build the macOS `.app`
 
 py2app cannot cross-compile, so build the app on macOS:
@@ -125,6 +149,17 @@ After changing an environment variable, quit any running instance completely bef
 ### Distribution
 
 An unsigned app triggers a macOS Gatekeeper warning. General distribution requires signing with a Developer ID certificate from the Apple Developer Program and notarization by Apple. See Apple's [Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).
+
+## Project naming
+
+The Python import package is `yt_transcript`. User-facing command names keep hyphens, which is conventional for shell commands:
+
+- Python package: `yt_transcript`
+- CLI command: `yt-transcript`
+- GUI entry point: `yt-transcript-app`
+- macOS bundle: `YouTubeTranscript.app`
+
+The existing Git repository and Python distribution identifier `yt-dlp-transcript` are retained for compatibility. The source package no longer uses the old `yt_dlp_transcript` import name.
 
 ## Captions and browser cookies
 
@@ -156,6 +191,7 @@ YouTube is temporarily rate-limiting caption requests. Wait and try again. If th
 ### Only Gemini summarization fails
 
 - Check the API key, Model ID, and quota
+- Use **Load available models** to confirm that the selected model is currently advertised for `generateContent`
 - The transcript remains available to save or copy; review the warning and try summarization again
 
 ### The `.app` does not launch
@@ -171,6 +207,7 @@ Run the executable from a terminal to view its log:
 - [pywebview JavaScript–Python bridge](https://pywebview.flowrl.com/guide/interdomain.html)
 - [pywebview freezing](https://pywebview.flowrl.com/guide/freezing.html)
 - [py2app tutorial](https://py2app.readthedocs.io/en/latest/tutorial.html)
+- [Gemini models API](https://ai.google.dev/api/models)
 
 ## License
 

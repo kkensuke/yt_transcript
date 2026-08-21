@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
-from .gemini import DEFAULT_GEMINI_MODEL
+from .gemini import DEFAULT_GEMINI_MODEL, list_gemini_models as fetch_gemini_models
 from .service import ExtractionOptions, ExtractionResult, error_payload, extract_transcript
 
 
@@ -37,6 +37,20 @@ class DesktopApi:
             "gemini_model_source": "environment" if model_from_environment else "default",
             "gemini_model_environment_variable": "GEMINI_MODEL",
         }
+
+    def list_gemini_models(self, api_key_override: str = "") -> dict[str, Any]:
+        api_key = str(api_key_override or "").strip() or os.getenv("GEMINI_API_KEY", "").strip()
+        if not api_key:
+            return {
+                "ok": False,
+                "error": "Enter a Gemini API key or set GEMINI_API_KEY to load available models.",
+            }
+        try:
+            models = fetch_gemini_models(api_key)
+        except Exception as exc:
+            payload = error_payload(exc)
+            return {"ok": False, "error": payload["message"], "hint": payload.get("hint", "")}
+        return {"ok": True, "models": models}
 
     def extract(self, payload: dict[str, Any]) -> dict[str, Any]:
         if not self._work_lock.acquire(blocking=False):
@@ -105,10 +119,12 @@ class DesktopApi:
 
 def load_ui_html() -> str:
     """Inline separated UI assets so pywebview never starts a local HTTP server."""
-    root = files("yt_dlp_transcript.ui")
+    root = files("yt_transcript.ui")
     template = root.joinpath("index.html").read_text(encoding="utf-8")
     styles = root.joinpath("styles.css").read_text(encoding="utf-8")
+    styles += "\n" + root.joinpath("enhancements.css").read_text(encoding="utf-8")
     script = root.joinpath("app.js").read_text(encoding="utf-8")
+    script += "\n" + root.joinpath("enhancements.js").read_text(encoding="utf-8")
     return template.replace("/*__APP_STYLES__*/", styles).replace("/*__APP_SCRIPT__*/", script)
 
 
