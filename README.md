@@ -25,8 +25,8 @@ The desktop app uses the `pywebview` JavaScript–Python bridge and runs locally
 - Gemini summarization and model discovery: a Gemini API key; caption extraction works without one
 
 ```bash
-git clone https://github.com/kkensuke/yt_dlp_transcript.git
-cd yt_dlp_transcript
+git clone https://github.com/kkensuke/yt_transcript.git
+cd yt_transcript
 ```
 
 ## CLI
@@ -152,14 +152,14 @@ An unsigned app triggers a macOS Gatekeeper warning. General distribution requir
 
 ## Project naming
 
-The Python import package is `yt_transcript`. User-facing command names keep hyphens, which is conventional for shell commands:
+The project uses the same base name consistently across GitHub, Python packaging, imports, and the CLI, using the separator conventional for each context:
 
+- GitHub repository: `yt_transcript`
+- Python distribution: `yt-transcript`
 - Python package: `yt_transcript`
 - CLI command: `yt-transcript`
 - GUI entry point: `yt-transcript-app`
 - macOS bundle: `YouTubeTranscript.app`
-
-The existing Git repository and Python distribution identifier `yt-dlp-transcript` are retained for compatibility. The source package no longer uses the old `yt_dlp_transcript` import name.
 
 ## Captions and browser cookies
 
