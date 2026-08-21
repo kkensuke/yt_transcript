@@ -85,6 +85,19 @@ def test_ui_supports_zoom_shortcuts_and_model_discovery() -> None:
     assert "list_gemini_models" in html
 
 
+def test_ui_starts_from_system_theme_and_offers_only_light_dark_controls() -> None:
+    html = load_ui_html()
+
+    assert 'window.matchMedia("(prefers-color-scheme: dark)").matches' in html
+    assert 'data-theme-choice' in html
+    assert '["light", "Light"]' in html
+    assert '["dark", "Dark"]' in html
+    assert 'document.documentElement.dataset.theme = currentTheme' in html
+    assert 'localStorage' not in html
+    assert ':root[data-theme="light"]' in html
+    assert ':root[data-theme="dark"]' in html
+
+
 def test_app_info_names_environment_sources_without_exposing_api_key(monkeypatch) -> None:
     monkeypatch.setenv("GEMINI_API_KEY", "super-secret-key")
     monkeypatch.setenv("GEMINI_MODEL", "gemini-test-model")
