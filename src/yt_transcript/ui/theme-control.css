@@ -1,0 +1,193 @@
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.theme-control {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.theme-choice {
+  min-width: 58px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.theme-choice:hover {
+  color: var(--text);
+}
+
+.theme-choice.active {
+  color: #ffffff;
+  background: var(--primary);
+}
+
+.theme-choice:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --page: #f4f6f8;
+  --surface: #ffffff;
+  --surface-muted: #f1f4f7;
+  --surface-blue: #f3f8fd;
+  --border: #cbd3dc;
+  --border-strong: #99a6b4;
+  --text: #17212b;
+  --text-muted: #465463;
+  --text-subtle: #5d6b79;
+  --primary: #0b57a4;
+  --primary-hover: #084681;
+  --primary-soft: #e5f0fb;
+  --focus: #82b8ed;
+  --success: #176b3a;
+  --success-soft: #edf8f1;
+  --warning: #765000;
+  --warning-soft: #fff7db;
+  --danger: #a61b1b;
+  --danger-soft: #fff0f0;
+  --shadow: 0 8px 24px rgba(22, 34, 47, 0.08);
+}
+
+:root[data-theme="light"] input::placeholder {
+  color: #657383;
+}
+
+:root[data-theme="light"] input:hover,
+:root[data-theme="light"] select:hover {
+  border-color: #6f7e8e;
+}
+
+:root[data-theme="light"] input:disabled,
+:root[data-theme="light"] select:disabled {
+  color: #536170;
+  background: #e8edf2;
+}
+
+:root[data-theme="light"] .button:disabled {
+  color: #5d6977;
+  border-color: #c3cbd4;
+  background: #dfe5eb;
+}
+
+:root[data-theme="light"] .button-primary:disabled {
+  color: #4c5966;
+  background: #d8dfe6;
+}
+
+:root[data-theme="light"] .button-secondary {
+  border-color: #7da6ce;
+}
+
+:root[data-theme="light"] .switch-track {
+  border-color: #6f7c89;
+  background: #7f8b97;
+}
+
+:root[data-theme="light"] .summary-options {
+  border-color: #93b5d7;
+}
+
+:root[data-theme="light"] .config-source-ready {
+  border-color: #8ab59b;
+}
+
+:root[data-theme="light"] .config-source-missing {
+  border-color: #d9bc69;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #10151b;
+  --surface: #171e26;
+  --surface-muted: #1d2630;
+  --surface-blue: #172536;
+  --border: #344250;
+  --border-strong: #526273;
+  --text: #eef3f8;
+  --text-muted: #c0cad5;
+  --text-subtle: #9eabb8;
+  --primary: #72b7ff;
+  --primary-hover: #98caff;
+  --primary-soft: #183b5c;
+  --focus: #72b7ff;
+  --success: #78d69d;
+  --success-soft: #173525;
+  --warning: #f0c96c;
+  --warning-soft: #3b3016;
+  --danger: #ff9898;
+  --danger-soft: #421f24;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme="dark"] input::placeholder {
+  color: #8e9aa7;
+}
+
+:root[data-theme="dark"] input:hover,
+:root[data-theme="dark"] select:hover {
+  border-color: #77899b;
+}
+
+:root[data-theme="dark"] input:disabled,
+:root[data-theme="dark"] select:disabled {
+  color: #8f9ba7;
+  background: #242e38;
+}
+
+:root[data-theme="dark"] .button:disabled,
+:root[data-theme="dark"] .button-primary:disabled {
+  color: #8996a3;
+  border-color: #3d4a57;
+  background: #2a343e;
+}
+
+:root[data-theme="dark"] .button-secondary {
+  border-color: #4f81ad;
+}
+
+:root[data-theme="dark"] .switch-track {
+  border-color: #697784;
+  background: #596674;
+}
+
+:root[data-theme="dark"] .summary-options {
+  border-color: #3d6d98;
+}
+
+:root[data-theme="dark"] .config-source-ready {
+  border-color: #47795b;
+}
+
+:root[data-theme="dark"] .config-source-missing {
+  border-color: #76612a;
+}
+
+:root[data-theme="dark"] a {
+  color: #8bc4ff;
+}
+
+@media (max-width: 820px) {
+  .app-header {
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}
