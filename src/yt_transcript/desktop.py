@@ -123,8 +123,10 @@ def load_ui_html() -> str:
     template = root.joinpath("index.html").read_text(encoding="utf-8")
     styles = root.joinpath("styles.css").read_text(encoding="utf-8")
     styles += "\n" + root.joinpath("enhancements.css").read_text(encoding="utf-8")
+    styles += "\n" + root.joinpath("theme-control.css").read_text(encoding="utf-8")
     script = root.joinpath("app.js").read_text(encoding="utf-8")
     script += "\n" + root.joinpath("enhancements.js").read_text(encoding="utf-8")
+    script += "\n" + root.joinpath("theme-control.js").read_text(encoding="utf-8")
     return template.replace("/*__APP_STYLES__*/", styles).replace("/*__APP_SCRIPT__*/", script)
 
 
