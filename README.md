@@ -49,9 +49,6 @@ uv run yt-transcript "VIDEO_ID" --gemini-model "gemini-flash-latest"
 
 # Recommended when writing files to another directory
 uv run yt-transcript "VIDEO_ID" --output-dir output/
-
-# Choose an exact transcript file path instead
-uv run yt-transcript "VIDEO_ID" --output output/transcript.md
 ```
 
 ### CLI options
@@ -59,7 +56,6 @@ uv run yt-transcript "VIDEO_ID" --output output/transcript.md
 | Option | Description |
 |---|---|
 | `url` | YouTube URL or 11-character video ID |
-| `-o`, `--output PATH` | Exact transcript Markdown output path |
 | `--output-dir DIR` | Directory for `<VIDEO_ID>_transcript.md` and `<VIDEO_ID>_summarized.md` |
 | `--no-timestamps` | Omit paragraph timestamps |
 | `--no-summary` | Skip Gemini summarization |
@@ -68,7 +64,7 @@ uv run yt-transcript "VIDEO_ID" --output output/transcript.md
 | `--cookies-from-browser BROWSER` | Use cookies from `chrome`, `chromium`, `edge`, `firefox`, `safari`, or `brave` |
 | `--gemini-model MODEL_ID` | Gemini Model ID for summarization |
 
-`--output` and `--output-dir` are mutually exclusive. With `--output-dir output/`, files are saved as `output/<VIDEO_ID>_transcript.md` and, when summarization succeeds, `output/<VIDEO_ID>_summarized.md`.
+With `--output-dir output/`, files are saved as `output/<VIDEO_ID>_transcript.md` and, when summarization succeeds, `output/<VIDEO_ID>_summarized.md`.
 
 Run `uv run yt-transcript --help` to see the complete CLI help.
 
