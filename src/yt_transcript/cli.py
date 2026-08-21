@@ -48,11 +48,6 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _transcript_output_path(args: argparse.Namespace, video_id: str) -> Path:
-    output_dir = args.output_dir or Path.cwd()
-    return output_dir / f"{video_id}_transcript.md"
-
-
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     options = ExtractionOptions(
@@ -76,7 +71,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Hint: {exc.hint}", file=sys.stderr)
         return 1
 
-    transcript_path = _transcript_output_path(args, result.video_id)
+    output_dir = args.output_dir or Path.cwd()
+    transcript_path = output_dir / f"{result.video_id}_transcript.md"
     transcript_path.parent.mkdir(parents=True, exist_ok=True)
     transcript_path.write_text(result.transcript, encoding="utf-8")
     print(f"Transcript saved to: {transcript_path}")
