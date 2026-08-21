@@ -11,6 +11,45 @@ from .utils import detect_language, format_timestamp
 from .youtube import VideoMetadata
 
 DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL") or "gemini-flash-lite-latest"
+GEMINI_API_ROOT = "https://generativelanguage.googleapis.com/v1beta"
+
+
+def list_gemini_models(api_key: str) -> list[str]:
+    """Return Gemini model IDs that support generateContent."""
+    key = api_key.strip()
+    if not key:
+        raise GeminiApiError("No Gemini API key is configured.")
+
+    models: set[str] = set()
+    page_token = ""
+    while True:
+        query_values = {"key": key, "pageSize": "100"}
+        if page_token:
+            query_values["pageToken"] = page_token
+        url = f"{GEMINI_API_ROOT}/models?{urllib.parse.urlencode(query_values)}"
+        request = urllib.request.Request(url, headers={"Accept": "application/json"})
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                result = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            detail = _http_error_message(exc)
+            raise GeminiApiError(f"Gemini API error ({exc.code}): {detail}") from exc
+        except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
+            raise GeminiApiError(f"Could not load Gemini models: {exc}") from exc
+
+        for item in result.get("models", []):
+            if "generateContent" not in (item.get("supportedGenerationMethods") or []):
+                continue
+            name = str(item.get("name") or "")
+            model_id = name.removeprefix("models/").strip()
+            if model_id:
+                models.add(model_id)
+
+        page_token = str(result.get("nextPageToken") or "")
+        if not page_token:
+            break
+
+    return sorted(models)
 
 
 def call_gemini_api(
@@ -28,10 +67,7 @@ def call_gemini_api(
     prompt = _build_prompt(text, resolved_language)
     query = urllib.parse.urlencode({"key": api_key.strip()})
     model_name = urllib.parse.quote(model.strip(), safe="-_.")
-    url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{model_name}:generateContent?{query}"
-    )
+    url = f"{GEMINI_API_ROOT}/models/{model_name}:generateContent?{query}"
     body = json.dumps(
         {"contents": [{"parts": [{"text": prompt}]}]},
         ensure_ascii=False,

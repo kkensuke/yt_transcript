@@ -10,7 +10,7 @@ if ! command -v uv >/dev/null 2>&1; then
     exit 1
 fi
 
-if [ ! -f "$PROJECT_ROOT/pyproject.toml" ] || [ ! -d "$PROJECT_ROOT/src/yt_dlp_transcript" ]; then
+if [ ! -f "$PROJECT_ROOT/pyproject.toml" ] || [ ! -d "$PROJECT_ROOT/src/yt_transcript" ]; then
     echo "error: project root could not be verified: $PROJECT_ROOT" >&2
     exit 1
 fi
@@ -34,11 +34,11 @@ if [ "${1:-}" = "--check" ]; then
 import sys
 from pathlib import Path
 
-import yt_dlp_transcript
-from yt_dlp_transcript.desktop import load_ui_html
+import yt_transcript
+from yt_transcript.desktop import load_ui_html
 
-expected = (Path(sys.argv[1]) / "src" / "yt_dlp_transcript").resolve()
-actual = Path(yt_dlp_transcript.__file__).resolve().parent
+expected = (Path(sys.argv[1]) / "src" / "yt_transcript").resolve()
+actual = Path(yt_transcript.__file__).resolve().parent
 assert actual == expected, f"Expected source package {expected}, loaded {actual}"
 assert "window.App" in load_ui_html()
 print("Source application check passed.")

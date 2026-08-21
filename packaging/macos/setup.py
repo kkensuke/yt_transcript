@@ -20,7 +20,7 @@ OPTIONS = {
     "dist_dir": str(PROJECT_ROOT / "dist"),
     # pywebview selects Cocoa dynamically and yt-dlp loads extractors dynamically,
     # so copy these packages in full instead of relying only on import analysis.
-    "packages": ["yt_dlp_transcript", "yt_dlp", "webview"],
+    "packages": ["yt_transcript", "yt_dlp", "webview"],
     "includes": ["AppKit", "Foundation", "WebKit", "objc", "PyObjCTools.AppHelper"],
     "resources": [str(PROJECT_ROOT / "LICENSE")],
     "plist": {

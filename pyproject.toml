@@ -24,16 +24,16 @@ dev = [
 ]
 
 [project.scripts]
-yt-transcript = "yt_dlp_transcript.cli:main"
+yt-transcript = "yt_transcript.cli:main"
 
 [project.gui-scripts]
-yt-transcript-app = "yt_dlp_transcript.desktop:main"
+yt-transcript-app = "yt_transcript.desktop:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-"yt_dlp_transcript.ui" = ["*.html", "*.css", "*.js"]
+"yt_transcript.ui" = ["*.html", "*.css", "*.js"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
