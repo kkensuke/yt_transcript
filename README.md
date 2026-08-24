@@ -164,7 +164,7 @@ The project uses the same base name consistently across GitHub, Python packaging
 
 ## Captions and browser cookies
 
-Try caption extraction without cookies first. Use `--cookies-from-browser` in the CLI or Advanced access settings in the desktop app only when a video requires a signed-in session, such as an age-restricted or unlisted video.
+Try caption extraction without cookies first. Use `--cookies-from-browser` in the CLI or **Browser cookies** in the desktop app only when a video requires a signed-in session, such as an age-restricted or unlisted video.
 
 ## Development and verification
 

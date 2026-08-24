@@ -177,19 +177,19 @@
   function updateExecutionSummary() {
     const format = elements.transcriptFormat.options[elements.transcriptFormat.selectedIndex].text;
     const parts = [
-      "Captions: Original language",
-      `Format: ${format}`,
+      `Transcript: ${format}`,
+      "Captions: original language",
     ];
     if (elements.summary.checked) {
       const summaryLanguage =
         elements.summaryLanguage.options[elements.summaryLanguage.selectedIndex].text;
-      parts.push(`Gemini summary: ${summaryLanguage}`);
+      parts.push(`Summary: ${summaryLanguage}`);
     } else {
-      parts.push("Gemini summary: off");
+      parts.push("Summary: off");
     }
     if (elements.cookieBrowser.value) {
       const browser = elements.cookieBrowser.options[elements.cookieBrowser.selectedIndex].text;
-      parts.push(`Cookie: ${browser}`);
+      parts.push(`Cookies: ${browser}`);
     }
     elements.runSummary.textContent = parts.join(" / ");
   }

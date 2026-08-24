@@ -1,5 +1,6 @@
 import re
 import sys
+from importlib.resources import files
 from types import SimpleNamespace
 
 from yt_transcript import desktop
@@ -31,7 +32,7 @@ def test_ui_explains_each_setting_before_its_control() -> None:
         ('for="geminiModel">Gemini Model ID</label>', 'id="geminiModel"'),
         ('id="apiKeyLabel"', 'id="apiKey"'),
         ('for="transcriptFormat">Transcript format</label>', 'id="transcriptFormat"'),
-        ('for="cookieBrowser">Browser for cookies</label>', 'id="cookieBrowser"'),
+        ('for="cookieBrowser">Browser cookies</label>', 'id="cookieBrowser"'),
     ]
     for label, control in label_and_control_pairs:
         assert html.index(label) < html.index(control)
@@ -52,6 +53,15 @@ def test_ui_labels_and_descriptions_reference_existing_controls() -> None:
         assert set(references.split()).issubset(ids)
 
 
+def test_ui_contains_every_element_required_by_the_main_script() -> None:
+    html = load_ui_html()
+    script = files("yt_transcript.ui").joinpath("app.js").read_text(encoding="utf-8")
+    html_ids = set(re.findall(r'\bid="([^"]+)"', html))
+    script_targets = set(re.findall(r'document\.getElementById\("([^"]+)"\)', script))
+
+    assert script_targets.issubset(html_ids)
+
+
 def test_ui_uses_separate_execution_and_settings_tabs_without_internal_result_scroll() -> None:
     html = load_ui_html()
 
@@ -63,12 +73,30 @@ def test_ui_uses_separate_execution_and_settings_tabs_without_internal_result_sc
     assert execute_panel < html.index('id="videoUrl"') < settings_panel
     assert execute_panel < html.index('id="runSummary"') < settings_panel
     assert execute_panel < html.index('id="extractButton"') < settings_panel
-    assert settings_panel < html.index("Output")
-    assert settings_panel < html.index("Advanced access settings")
+    assert settings_panel < html.index("Transcript settings")
+    assert html.index('id="transcriptFormat"') < html.index('id="cookieBrowser"')
+    assert html.index('id="cookieBrowser"') < html.index('id="summaryToggle"')
+    assert "Advanced access settings" not in html
+    assert "<details" not in html
     assert 'id="pasteButton"' not in html
     assert "navigator.clipboard.readText" not in html
     assert "max-height: 590px" not in html
     assert "overflow: visible" in html
+
+
+def test_ui_removes_styles_for_the_deleted_advanced_settings_panel() -> None:
+    html = load_ui_html()
+
+    for removed_selector in (
+        ".advanced-options",
+        ".advanced-content",
+        ".summary-title",
+        ".toggle-grid",
+        ".subsection-label",
+        ".section-description",
+        "summary:focus-visible",
+    ):
+        assert removed_selector not in html
 
 
 def test_ui_has_required_timestamps_formats_long_summary_choices_and_save_all() -> None:

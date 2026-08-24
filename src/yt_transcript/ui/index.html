@@ -91,7 +91,7 @@
             <div class="execution-summary" aria-live="polite">
               <span>This run</span>
               <strong id="runSummary">
-                Captions: Original language · Format: Markdown · Gemini summary: Auto-detect
+                Transcript: Markdown (.md) / Captions: original language / Summary: Auto-detect
               </strong>
             </div>
 
@@ -109,45 +109,61 @@
             aria-labelledby="settingsFormTab"
           >
             <fieldset class="workflow-block">
-              <legend class="workflow-title">Output</legend>
+              <legend class="workflow-title">Transcript settings</legend>
               <p class="workflow-description">
-                Choose what to create. You can change these settings and run the video again.
+                Choose the file format and optional browser access for restricted videos.
               </p>
 
-              <div class="field-block">
-                <label class="field-label" for="transcriptFormat">Transcript format</label>
-                <p id="transcriptFormatHelp" class="field-description">
-                  Timestamps are always included. Markdown timestamps link to the video.
-                </p>
-                <select id="transcriptFormat" aria-describedby="transcriptFormatHelp">
-                  <option value="md">Markdown (.md)</option>
-                  <option value="txt">Plain text (.txt)</option>
-                  <option value="json">JSON (.json)</option>
-                  <option value="srt">SubRip subtitles (.srt)</option>
-                  <option value="vtt">WebVTT subtitles (.vtt)</option>
-                </select>
-              </div>
+              <div class="field-grid">
+                <div class="field-block">
+                  <label class="field-label" for="transcriptFormat">Transcript format</label>
+                  <p id="transcriptFormatHelp" class="field-description">
+                    Timestamps are always included; Markdown timestamps open the video.
+                  </p>
+                  <select id="transcriptFormat" aria-describedby="transcriptFormatHelp">
+                    <option value="md">Markdown (.md)</option>
+                    <option value="txt">Plain text (.txt)</option>
+                    <option value="json">JSON (.json)</option>
+                    <option value="srt">SubRip subtitles (.srt)</option>
+                    <option value="vtt">WebVTT subtitles (.vtt)</option>
+                  </select>
+                </div>
 
-              <div class="toggle-grid">
-                <label class="toggle-card" for="summaryToggle">
-                  <span>
-                    <strong>Summarize with Gemini</strong>
-                    <small>Create a structured AI summary alongside the transcript.</small>
-                  </span>
-                  <span class="switch">
-                    <input
-                      id="summaryToggle"
-                      type="checkbox"
-                      role="switch"
-                      checked
-                      aria-controls="summaryOptions"
-                      aria-expanded="true"
-                    >
-                    <span class="switch-track" aria-hidden="true"></span>
-                  </span>
-                </label>
+                <div class="field-block">
+                  <label class="field-label" for="cookieBrowser">Browser cookies</label>
+                  <p id="cookieBrowserHelp" class="field-description">
+                    Leave this off unless the video requires a signed-in browser.
+                  </p>
+                  <select id="cookieBrowser" aria-describedby="cookieBrowserHelp">
+                    <option value="">None (recommended)</option>
+                    <option value="chrome">Chrome</option>
+                    <option value="safari">Safari</option>
+                    <option value="firefox">Firefox</option>
+                    <option value="edge">Edge</option>
+                    <option value="brave">Brave</option>
+                    <option value="chromium">Chromium</option>
+                  </select>
+                </div>
               </div>
             </fieldset>
+
+            <label class="toggle-card" for="summaryToggle">
+              <span>
+                <strong>Gemini summary</strong>
+                <small>Create a Markdown summary after extracting the transcript.</small>
+              </span>
+              <span class="switch">
+                <input
+                  id="summaryToggle"
+                  type="checkbox"
+                  role="switch"
+                  checked
+                  aria-controls="summaryOptions"
+                  aria-expanded="true"
+                >
+                <span class="switch-track" aria-hidden="true"></span>
+              </span>
+            </label>
 
             <section
               id="summaryOptions"
@@ -156,11 +172,9 @@
               aria-labelledby="summarySettingsHeading"
             >
               <div class="subsection-heading">
-                <span class="subsection-label">Gemini summary</span>
                 <h3 id="summarySettingsHeading">Summary settings</h3>
                 <p>
-                  These settings apply only when summarization is enabled. The defaults usually
-                  work well; provide an API key if one is not available in the environment.
+                  Choose the language and model. Enter an API key only if one is not configured.
                 </p>
               </div>
 
@@ -229,32 +243,6 @@
                 </p>
               </div>
             </section>
-
-            <details class="advanced-options">
-              <summary>
-                <span class="summary-title">
-                  <strong>Advanced access settings</strong>
-                  <small>Use browser cookies only if captions cannot be retrieved.</small>
-                </span>
-              </summary>
-              <div class="advanced-content field-grid">
-                <div class="field-block">
-                  <label class="field-label" for="cookieBrowser">Browser for cookies</label>
-                  <p id="cookieBrowserHelp" class="field-description">
-                    For age-restricted or unlisted videos that require a login.
-                  </p>
-                  <select id="cookieBrowser" aria-describedby="cookieBrowserHelp">
-                    <option value="">Do not use (recommended)</option>
-                    <option value="chrome">Chrome</option>
-                    <option value="safari">Safari</option>
-                    <option value="firefox">Firefox</option>
-                    <option value="edge">Edge</option>
-                    <option value="brave">Brave</option>
-                    <option value="chromium">Chromium</option>
-                  </select>
-                </div>
-              </div>
-            </details>
           </section>
         </form>
       </section>
