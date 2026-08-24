@@ -20,7 +20,7 @@
         </div>
         <div>
           <h1>YouTube Transcript</h1>
-          <p>Turn YouTube captions into readable Markdown</p>
+          <p>Turn YouTube captions into readable, reusable files</p>
         </div>
       </div>
       <div id="bridgeStatus" class="status-pill status-waiting" aria-live="polite">
@@ -91,7 +91,7 @@
             <div class="execution-summary" aria-live="polite">
               <span>This run</span>
               <strong id="runSummary">
-                Captions: Auto · Timestamps: on · Gemini summary: Auto-detect
+                Captions: Original language · Format: Markdown · Gemini summary: Auto-detect
               </strong>
             </div>
 
@@ -114,18 +114,21 @@
                 Choose what to create. You can change these settings and run the video again.
               </p>
 
-              <div class="toggle-grid">
-                <label class="toggle-card" for="timestampsToggle">
-                  <span>
-                    <strong>Include timestamps</strong>
-                    <small>Show each paragraph's start time in the transcript.</small>
-                  </span>
-                  <span class="switch">
-                    <input id="timestampsToggle" type="checkbox" role="switch" checked>
-                    <span class="switch-track" aria-hidden="true"></span>
-                  </span>
-                </label>
+              <div class="field-block">
+                <label class="field-label" for="transcriptFormat">Transcript format</label>
+                <p id="transcriptFormatHelp" class="field-description">
+                  Timestamps are always included. Markdown timestamps link to the video.
+                </p>
+                <select id="transcriptFormat" aria-describedby="transcriptFormatHelp">
+                  <option value="md">Markdown (.md)</option>
+                  <option value="txt">Plain text (.txt)</option>
+                  <option value="json">JSON (.json)</option>
+                  <option value="srt">SubRip subtitles (.srt)</option>
+                  <option value="vtt">WebVTT subtitles (.vtt)</option>
+                </select>
+              </div>
 
+              <div class="toggle-grid">
                 <label class="toggle-card" for="summaryToggle">
                   <span>
                     <strong>Summarize with Gemini</strong>
@@ -230,25 +233,11 @@
             <details class="advanced-options">
               <summary>
                 <span class="summary-title">
-                  <strong>Advanced caption settings</strong>
-                  <small>Change these only if captions cannot be retrieved.</small>
+                  <strong>Advanced access settings</strong>
+                  <small>Use browser cookies only if captions cannot be retrieved.</small>
                 </span>
               </summary>
               <div class="advanced-content field-grid">
-                <div class="field-block">
-                  <label class="field-label" for="captionLanguage">
-                    Preferred caption language
-                  </label>
-                  <p id="captionLanguageHelp" class="field-description">
-                    The language to try first for manual and auto-generated captions.
-                  </p>
-                  <select id="captionLanguage" aria-describedby="captionLanguageHelp">
-                    <option value="auto">Auto</option>
-                    <option value="ja">Prefer Japanese</option>
-                    <option value="en">Prefer English</option>
-                  </select>
-                </div>
-
                 <div class="field-block">
                   <label class="field-label" for="cookieBrowser">Browser for cookies</label>
                   <p id="cookieBrowserHelp" class="field-description">
@@ -313,6 +302,32 @@
 
         <div id="warningBanner" class="warning-banner hidden" role="status"></div>
 
+        <section
+          id="summaryLimitPanel"
+          class="summary-limit-panel hidden"
+          aria-labelledby="summaryLimitHeading"
+        >
+          <div>
+            <span class="section-label">Summary input</span>
+            <h3 id="summaryLimitHeading">The captions exceed the default summary limit</h3>
+            <p id="summaryLimitMessage"></p>
+            <p class="summary-limit-note">
+              Sending the full transcript may exceed the selected model's context limit or fail.
+            </p>
+          </div>
+          <div class="summary-limit-actions">
+            <button class="button button-primary-small" type="button" data-summary-mode="truncate">
+              Summarize first 50,000 characters
+            </button>
+            <button class="button button-secondary" type="button" data-summary-mode="full">
+              Summarize all captions
+            </button>
+            <button class="button button-secondary" type="button" data-summary-mode="skip">
+              Keep transcript only
+            </button>
+          </div>
+        </section>
+
         <div class="result-toolbar">
           <div class="tabs" role="tablist" aria-label="Result to display">
             <button
@@ -334,8 +349,11 @@
           </div>
           <div class="result-actions">
             <button id="copyButton" class="button button-secondary" type="button">Copy</button>
+            <button id="saveAllButton" class="button button-secondary hidden" type="button">
+              Save all
+            </button>
             <button id="saveButton" class="button button-primary-small" type="button">
-              Save Markdown
+              Save displayed
             </button>
           </div>
         </div>

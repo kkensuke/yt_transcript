@@ -1,7 +1,17 @@
 import re
+import sys
+from types import SimpleNamespace
 
 from yt_transcript import desktop
 from yt_transcript.desktop import DesktopApi, load_ui_html
+from yt_transcript.models import (
+    CaptionTrack,
+    OutputArtifact,
+    TranscriptDocument,
+    TranscriptSegment,
+    VideoMetadata,
+)
+from yt_transcript.service import ExtractionResult
 
 
 def test_ui_assets_are_inlined_without_external_dependencies() -> None:
@@ -20,7 +30,7 @@ def test_ui_explains_each_setting_before_its_control() -> None:
         ('for="summaryLanguage">Summary language</label>', 'id="summaryLanguage"'),
         ('for="geminiModel">Gemini Model ID</label>', 'id="geminiModel"'),
         ('id="apiKeyLabel"', 'id="apiKey"'),
-        ('for="captionLanguage"', 'id="captionLanguage"'),
+        ('for="transcriptFormat">Transcript format</label>', 'id="transcriptFormat"'),
         ('for="cookieBrowser">Browser for cookies</label>', 'id="cookieBrowser"'),
     ]
     for label, control in label_and_control_pairs:
@@ -54,11 +64,26 @@ def test_ui_uses_separate_execution_and_settings_tabs_without_internal_result_sc
     assert execute_panel < html.index('id="runSummary"') < settings_panel
     assert execute_panel < html.index('id="extractButton"') < settings_panel
     assert settings_panel < html.index("Output")
-    assert settings_panel < html.index("Advanced caption settings")
+    assert settings_panel < html.index("Advanced access settings")
     assert 'id="pasteButton"' not in html
     assert "navigator.clipboard.readText" not in html
     assert "max-height: 590px" not in html
     assert "overflow: visible" in html
+
+
+def test_ui_has_required_timestamps_formats_long_summary_choices_and_save_all() -> None:
+    html = load_ui_html()
+
+    assert 'id="timestampsToggle"' not in html
+    assert 'id="captionLanguage"' not in html
+    assert "Timestamps are always included" in html
+    for output_format in ("md", "txt", "json", "srt", "vtt"):
+        assert f'<option value="{output_format}">' in html
+    assert 'data-summary-mode="truncate"' in html
+    assert 'data-summary-mode="full"' in html
+    assert 'data-summary-mode="skip"' in html
+    assert "Summarize all captions" in html
+    assert 'id="saveAllButton"' in html
 
 
 def test_ui_enables_gemini_summary_by_default() -> None:
@@ -89,11 +114,11 @@ def test_ui_starts_from_system_theme_and_offers_only_light_dark_controls() -> No
     html = load_ui_html()
 
     assert 'window.matchMedia("(prefers-color-scheme: dark)").matches' in html
-    assert 'data-theme-choice' in html
+    assert "data-theme-choice" in html
     assert '["light", "Light"]' in html
     assert '["dark", "Dark"]' in html
-    assert 'document.documentElement.dataset.theme = currentTheme' in html
-    assert 'localStorage' not in html
+    assert "document.documentElement.dataset.theme = currentTheme" in html
+    assert "localStorage" not in html
     assert ':root[data-theme="light"]' in html
     assert ':root[data-theme="dark"]' in html
 
@@ -139,3 +164,51 @@ def test_desktop_lists_models_without_exposing_environment_key(monkeypatch) -> N
     assert response == {"ok": True, "models": ["gemini-flash-latest"]}
     assert observed == ["environment-secret"]
     assert "environment-secret" not in repr(response)
+
+
+def test_save_all_writes_both_artifacts_and_confirms_overwrite(monkeypatch, tmp_path) -> None:
+    metadata = VideoMetadata("dQw4w9WgXcQ", "Test", 10, "", "en")
+    document = TranscriptDocument(
+        metadata,
+        CaptionTrack((), "en", "manual"),
+        (TranscriptSegment(0.0, 1.0, "Hello."),),
+    )
+    transcript = OutputArtifact(
+        "transcript",
+        "txt",
+        "dQw4w9WgXcQ_transcript.txt",
+        "Transcript\n",
+    )
+    summary = OutputArtifact(
+        "summary",
+        "md",
+        "dQw4w9WgXcQ_summarized.md",
+        "# Summary\n",
+    )
+    api = DesktopApi()
+    api._latest = ExtractionResult(
+        document=document,
+        transcript=transcript,
+        summary=summary,
+        summary_limit=None,
+        warning=None,
+        character_count=6,
+        word_count=1,
+    )
+    api.bind_window(SimpleNamespace(create_file_dialog=lambda *_args, **_kwargs: [str(tmp_path)]))
+    monkeypatch.setitem(
+        sys.modules,
+        "webview",
+        SimpleNamespace(FileDialog=SimpleNamespace(FOLDER="folder")),
+    )
+
+    first = api.save_all_results()
+    conflict = api.save_all_results()
+    overwrite = api.save_all_results(overwrite=True)
+
+    assert first["ok"] is True
+    assert len(first["paths"]) == 2
+    assert (tmp_path / transcript.filename).read_text(encoding="utf-8") == transcript.content
+    assert (tmp_path / summary.filename).read_text(encoding="utf-8") == summary.content
+    assert conflict["needs_overwrite_confirmation"] is True
+    assert overwrite["ok"] is True

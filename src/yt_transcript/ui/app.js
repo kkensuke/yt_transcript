@@ -9,11 +9,10 @@
     settingsFormPanel: document.getElementById("settingsFormPanel"),
     videoUrl: document.getElementById("videoUrl"),
     urlError: document.getElementById("urlError"),
-    timestamps: document.getElementById("timestampsToggle"),
+    transcriptFormat: document.getElementById("transcriptFormat"),
     summary: document.getElementById("summaryToggle"),
     summaryOptions: document.getElementById("summaryOptions"),
     summaryLanguage: document.getElementById("summaryLanguage"),
-    captionLanguage: document.getElementById("captionLanguage"),
     cookieBrowser: document.getElementById("cookieBrowser"),
     apiKey: document.getElementById("apiKey"),
     apiKeyLabel: document.getElementById("apiKeyLabel"),
@@ -42,11 +41,14 @@
     resultTitle: document.getElementById("resultTitle"),
     resultMeta: document.getElementById("resultMeta"),
     warningBanner: document.getElementById("warningBanner"),
+    summaryLimitPanel: document.getElementById("summaryLimitPanel"),
+    summaryLimitMessage: document.getElementById("summaryLimitMessage"),
     transcriptTab: document.getElementById("transcriptTab"),
     summaryTab: document.getElementById("summaryTab"),
     markdownOutput: document.getElementById("markdownOutput"),
     copyButton: document.getElementById("copyButton"),
     saveButton: document.getElementById("saveButton"),
+    saveAllButton: document.getElementById("saveAllButton"),
     openVideoButton: document.getElementById("openVideoButton"),
     toastRegion: document.getElementById("toastRegion"),
   };
@@ -79,9 +81,8 @@
   window.addEventListener("pywebviewready", initializeBridge, { once: true });
   elements.form.addEventListener("submit", handleSubmit);
   elements.summary.addEventListener("change", syncSummaryOptions);
-  elements.timestamps.addEventListener("change", updateExecutionSummary);
+  elements.transcriptFormat.addEventListener("change", updateExecutionSummary);
   elements.summaryLanguage.addEventListener("change", updateExecutionSummary);
-  elements.captionLanguage.addEventListener("change", updateExecutionSummary);
   elements.cookieBrowser.addEventListener("change", updateExecutionSummary);
   elements.videoUrl.addEventListener("input", () => {
     clearUrlError();
@@ -91,7 +92,12 @@
   elements.apiKeyVisibilityButton.addEventListener("click", toggleApiKeyVisibility);
   elements.copyButton.addEventListener("click", copyCurrentResult);
   elements.saveButton.addEventListener("click", saveCurrentResult);
+  elements.saveAllButton.addEventListener("click", saveAllResults);
   elements.openVideoButton.addEventListener("click", openCurrentVideo);
+  elements.markdownOutput.addEventListener("click", handleOutputLink);
+  document.querySelectorAll("[data-summary-mode]").forEach((button) => {
+    button.addEventListener("click", () => resolveLongSummary(button.dataset.summaryMode));
+  });
   document.querySelectorAll("[data-form-tab]").forEach((button) => {
     button.addEventListener("click", () => switchFormTab(button.dataset.formTab));
   });
@@ -169,10 +175,10 @@
   }
 
   function updateExecutionSummary() {
-    const caption = elements.captionLanguage.options[elements.captionLanguage.selectedIndex].text;
+    const format = elements.transcriptFormat.options[elements.transcriptFormat.selectedIndex].text;
     const parts = [
-      `Captions: ${caption}`,
-      `Timestamps: ${elements.timestamps.checked ? "on" : "off"}`,
+      "Captions: Original language",
+      `Format: ${format}`,
     ];
     if (elements.summary.checked) {
       const summaryLanguage =
@@ -271,10 +277,10 @@
 
     const payload = {
       url,
-      include_timestamps: elements.timestamps.checked,
+      transcript_format: elements.transcriptFormat.value,
       generate_summary: elements.summary.checked,
       summary_language: elements.summaryLanguage.value,
-      caption_language: elements.captionLanguage.value,
+      long_summary_mode: "ask",
       cookie_browser: elements.cookieBrowser.value,
       api_key: elements.apiKey.value.trim(),
       gemini_model: elements.geminiModel.value.trim(),
@@ -313,16 +319,18 @@
       elements.executeFormTab,
       elements.settingsFormTab,
       elements.videoUrl,
-      elements.timestamps,
+      elements.transcriptFormat,
       elements.summary,
       elements.summaryLanguage,
-      elements.captionLanguage,
       elements.cookieBrowser,
       elements.apiKey,
       elements.apiKeyVisibilityButton,
       elements.geminiModel,
     ].forEach((control) => {
       control.disabled = busy;
+    });
+    document.querySelectorAll("[data-summary-mode]").forEach((button) => {
+      button.disabled = busy;
     });
     syncActionState();
   }
@@ -333,7 +341,7 @@
     elements.resultTitle.textContent = result.video_title || result.video_id;
 
     const duration = formatDuration(result.duration);
-    const size = result.language === "ja"
+    const size = String(result.language || "").toLowerCase().startsWith("ja")
       ? `${Number(result.character_count || 0).toLocaleString()} characters`
       : `${Number(result.word_count || 0).toLocaleString()} words`;
     elements.resultMeta.textContent = `${duration} ・ ${result.caption_label} ・ ${size}`;
@@ -341,6 +349,17 @@
     elements.warningBanner.classList.toggle("hidden", !result.warning);
     elements.warningBanner.textContent = result.warning || "";
     elements.summaryTab.classList.toggle("hidden", !result.summary);
+    elements.saveAllButton.classList.toggle("hidden", !result.summary);
+
+    const summaryLimit = result.summary_limit;
+    const needsSummaryChoice = Boolean(summaryLimit && summaryLimit.requires_confirmation);
+    elements.summaryLimitPanel.classList.toggle("hidden", !needsSummaryChoice);
+    if (needsSummaryChoice) {
+      const source = Number(summaryLimit.source_characters || 0).toLocaleString();
+      const limit = Number(summaryLimit.limit_characters || 0).toLocaleString();
+      elements.summaryLimitMessage.textContent =
+        `Caption length: [${source} / ${limit} characters]. Choose how Gemini should summarize it.`;
+    }
     switchTab("transcript");
     elements.resultPanel.classList.remove("hidden");
     elements.resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -356,8 +375,55 @@
       button.classList.toggle("active", active);
       button.setAttribute("aria-selected", String(active));
     });
-    const content = tab === "summary" ? state.result.summary : state.result.transcript;
-    elements.markdownOutput.innerHTML = renderMarkdown(content || "");
+    const artifact = tab === "summary" ? state.result.summary : state.result.transcript;
+    const content = artifact ? artifact.content : "";
+    const isMarkdown = artifact && artifact.format === "md";
+    elements.markdownOutput.classList.toggle("plain-output", !isMarkdown);
+    if (isMarkdown) {
+      elements.markdownOutput.innerHTML = renderMarkdown(content);
+    } else {
+      elements.markdownOutput.textContent = content;
+    }
+    elements.saveButton.textContent = artifact
+      ? `Save ${String(artifact.format).toUpperCase()}`
+      : "Save displayed";
+  }
+
+  async function resolveLongSummary(mode) {
+    if (!state.result || state.busy || !["truncate", "full", "skip"].includes(mode)) return;
+    setBusy(true);
+    hideError();
+    elements.progressPanel.classList.remove("hidden");
+    window.App.onProgress({ percent: 72, message: "Applying summary choice…" });
+    try {
+      const response = await window.pywebview.api.summarize_latest(
+        mode,
+        elements.apiKey.value.trim(),
+        elements.summaryLanguage.value,
+        elements.geminiModel.value.trim(),
+      );
+      if (!response || !response.ok) {
+        showError(response && response.error ? response.error : {});
+        return;
+      }
+      renderResult(response.result);
+      if (response.result.summary) {
+        switchTab("summary");
+        showToast("Summary complete.", "success");
+      } else if (mode === "skip") {
+        showToast("Summary skipped.", "success");
+      } else {
+        showToast("Summary failed. Choose another option or review the warning.", "error");
+      }
+    } catch (error) {
+      showError({
+        message: "Communication with the Python process failed.",
+        hint: error && error.message ? error.message : String(error),
+      });
+    } finally {
+      elements.progressPanel.classList.add("hidden");
+      setBusy(false);
+    }
   }
 
   async function saveCurrentResult() {
@@ -377,10 +443,35 @@
     }
   }
 
+  async function saveAllResults() {
+    if (!state.result || !state.result.summary) return;
+    elements.saveAllButton.disabled = true;
+    try {
+      let response = await window.pywebview.api.save_all_results(false);
+      if (response && response.needs_overwrite_confirmation) {
+        const names = (response.conflicts || []).join("\n");
+        if (!window.confirm(`The following files already exist:\n\n${names}\n\nReplace them?`)) {
+          return;
+        }
+        response = await window.pywebview.api.save_all_results(true);
+      }
+      if (!response || !response.ok) {
+        showToast((response && response.error) || "Could not save the files.", "error");
+      } else if (!response.cancelled) {
+        showToast(`Saved ${response.paths.length} files.`, "success");
+      }
+    } catch (error) {
+      showToast(`Could not save the files: ${error}`, "error");
+    } finally {
+      elements.saveAllButton.disabled = false;
+    }
+  }
+
   async function copyCurrentResult() {
     if (!state.result) return;
-    const content = state.activeTab === "summary" ? state.result.summary : state.result.transcript;
-    if (!content) return;
+    const artifact = state.activeTab === "summary" ? state.result.summary : state.result.transcript;
+    if (!artifact) return;
+    const content = artifact.content;
     try {
       await navigator.clipboard.writeText(content);
     } catch (_error) {
@@ -402,6 +493,18 @@
       if (!response.ok) showToast(response.error || "Could not open the video.", "error");
     } catch (error) {
       showToast(`Could not open the video: ${error}`, "error");
+    }
+  }
+
+  async function handleOutputLink(event) {
+    const link = event.target.closest("[data-video-seconds]");
+    if (!link) return;
+    event.preventDefault();
+    try {
+      const response = await window.pywebview.api.open_video_at(link.dataset.videoSeconds);
+      if (!response.ok) showToast(response.error || "Could not open the timestamp.", "error");
+    } catch (error) {
+      showToast(`Could not open the timestamp: ${error}`, "error");
     }
   }
 
@@ -468,7 +571,16 @@
 
   function renderInline(value) {
     const codeTokens = [];
-    let text = escapeHtml(value);
+    const linkTokens = [];
+    let raw = String(value).replace(
+      /\[([^\]]+)\]\((https:\/\/www\.youtube\.com\/watch\?[^)\s]+)\)/g,
+      (_match, label, url) => {
+        const token = `\u0000LINK${linkTokens.length}\u0000`;
+        linkTokens.push(renderYouTubeLink(label, url));
+        return token;
+      },
+    );
+    let text = escapeHtml(raw);
     text = text.replace(/`([^`]+)`/g, (_match, code) => {
       const token = `\u0000CODE${codeTokens.length}\u0000`;
       codeTokens.push(`<code>${code}</code>`);
@@ -478,7 +590,19 @@
     text = text.replace(/__([^_]+)__/g, "<strong>$1</strong>");
     text = text.replace(/\*([^*]+)\*/g, "<em>$1</em>");
     text = text.replace(/\u0000CODE(\d+)\u0000/g, (_match, index) => codeTokens[Number(index)]);
+    text = text.replace(/\u0000LINK(\d+)\u0000/g, (_match, index) => linkTokens[Number(index)]);
     return text;
+  }
+
+  function renderYouTubeLink(label, value) {
+    try {
+      const url = new URL(value);
+      if (url.protocol !== "https:" || url.hostname !== "www.youtube.com") return escapeHtml(label);
+      const seconds = Math.max(0, Number.parseInt(url.searchParams.get("t") || "0", 10) || 0);
+      return `<a href="#" data-video-seconds="${seconds}">${escapeHtml(label)}</a>`;
+    } catch (_error) {
+      return escapeHtml(label);
+    }
   }
 
   function renderMarkdown(markdown) {

@@ -1,18 +1,20 @@
 # YouTube Transcript
 
-YouTube Transcript is a command-line tool and macOS desktop app that turns YouTube captions into readable Markdown, with optional Gemini summarization.
+YouTube Transcript is a command-line tool and macOS desktop app that turns original-language YouTube captions into reusable Markdown, text, JSON, SRT, or VTT files, with optional Gemini summarization.
 
 ## Features
 
-- Extract manual or auto-generated captions from a YouTube URL or 11-character video ID
-- Prefer Japanese or English captions, or select a language automatically
-- Create Markdown with or without timestamps
+- Extract the original-language manual or auto-generated captions from a YouTube URL or 11-character video ID
+- Create Markdown, plain text, JSON, SRT, or VTT from one structured transcript
+- Include timestamps in every format, with clickable YouTube timestamps in Markdown
+- Include source chapters reported by YouTube in Markdown, text, and JSON output
 - Summarize in Japanese, English, or an automatically detected language with Gemini
+- Ask before summarizing captions longer than 50,000 characters: summarize a segment-boundary prefix, send all captions, or keep only the transcript
 - Load the currently available Gemini `generateContent` models in the desktop UI
 - Select a Gemini Model ID from the CLI or desktop UI
 - Save transcript and summary files together with `--output-dir`
 - Use browser cookies for unlisted or age-restricted videos
-- Preview, copy, and save results from the desktop app
+- Preview, copy, save the displayed result, or save transcript and summary together from the desktop app
 - Switch between Light and Dark in the app
 
 ## Requirements
@@ -38,8 +40,11 @@ uv run yt-transcript "https://www.youtube.com/watch?v=VIDEO_ID"
 # Transcript only
 uv run yt-transcript "VIDEO_ID" --no-summary
 
-# Prefer Japanese captions and omit timestamps
-uv run yt-transcript "VIDEO_ID" --caption-lang ja --no-timestamps
+# Save a WebVTT transcript (timestamps are always included)
+uv run yt-transcript "VIDEO_ID" --format vtt --no-summary
+
+# For captions over 50,000 characters, send the full transcript to Gemini
+uv run yt-transcript "VIDEO_ID" --long-summary full
 
 # Use Chrome cookies for a restricted video
 uv run yt-transcript "VIDEO_ID" --cookies-from-browser chrome
@@ -56,19 +61,19 @@ uv run yt-transcript "VIDEO_ID" --output-dir output/
 | Option | Description |
 |---|---|
 | `url` | YouTube URL or 11-character video ID |
-| `--output-dir DIR` | Directory for `<VIDEO_ID>_transcript.md` and `<VIDEO_ID>_summarized.md` |
-| `--no-timestamps` | Omit paragraph timestamps |
+| `--output-dir DIR` | Directory for transcript and summary files |
+| `--format {md,txt,json,srt,vtt}` | Transcript format; defaults to `md` |
 | `--no-summary` | Skip Gemini summarization |
 | `--summary-lang {auto,en,ja}` | Summary language |
-| `--caption-lang {auto,en,ja}` | Preferred caption language |
+| `--long-summary {skip,truncate,full}` | Behavior above 50,000 caption characters; defaults to `skip` |
 | `--cookies-from-browser BROWSER` | Use cookies from `chrome`, `chromium`, `edge`, `firefox`, `safari`, or `brave` |
 | `--gemini-model MODEL_ID` | Gemini Model ID for summarization |
 
-With `--output-dir output/`, files are saved as `output/<VIDEO_ID>_transcript.md` and, when summarization succeeds, `output/<VIDEO_ID>_summarized.md`.
+With `--output-dir output/`, the transcript is saved as `output/<VIDEO_ID>_transcript.<FORMAT>` and, when summarization succeeds, its Markdown summary is saved as `output/<VIDEO_ID>_summarized.md`.
 
 Run `uv run yt-transcript --help` to see the complete CLI help.
 
-The CLI attempts summarization by default. If `GEMINI_API_KEY` is missing or summarization fails, the transcript is still saved and the reason is shown as a warning. A summary is saved next to the transcript as `<VIDEO_ID>_summarized.md`.
+The CLI attempts summarization by default. If `GEMINI_API_KEY` is missing or summarization fails, the transcript is still saved and the reason is shown as a warning. For captions above 50,000 characters, the non-interactive default is `--long-summary skip`; select `truncate` to use the largest complete-segment prefix within the limit or `full` to send every caption character in one request. The selected Gemini model can still reject a full request if it exceeds that model's context limit.
 
 The Gemini Model ID is selected in this order:
 
@@ -100,13 +105,17 @@ export GEMINI_MODEL="gemini-flash-latest"  # Optional
 
 Settings shows whether the API key and model came from the environment or the app default, but it never reveals the environment API key. A key or Model ID entered in the UI overrides the environment for that run only and is never saved.
 
+Select the transcript format in Settings. Timestamps are always present, and Markdown timestamps open the video at that position. When YouTube reports source chapters, they are included without AI-generated chapter inference. The result toolbar can save the displayed artifact or save the transcript and Markdown summary together after one folder selection; existing files require confirmation before replacement.
+
+If the caption text exceeds 50,000 characters, the app shows the measured size before calling Gemini and offers three choices: summarize the first complete segments that fit within 50,000 characters, summarize all captions in one request, or keep only the transcript. The resulting summary records whether a prefix or the full over-limit source was used.
+
 ### Available Gemini models
 
 In Settings, select **Load available models** to query the Gemini Models API. The app lists only models that advertise support for `generateContent`. The current text field remains editable, so a Model ID can still be entered manually. If `GEMINI_API_KEY` is already configured, the app also attempts to load the list when the desktop bridge becomes ready.
 
 ### Appearance and zoom
 
-When the app opens, it reads the current macOS appearance once and starts in the matching Light or Dark theme. While the app is open, use the **Light** and **Dark** controls in the header to switch manually. The manual choice is intentionally session-only: the next launch starts from the current macOS appearance again.
+When the app opens, it reads the current macOS appearance once and starts in the matching Light or Dark mode. While the app is open, use the **Light** and **Dark** controls in the header to switch manually. The manual choice is intentionally session-only: the next launch starts from the current macOS appearance again.
 
 Use these keyboard shortcuts to change the UI scale:
 - `Command` + `=`: zoom in
@@ -155,7 +164,7 @@ The project uses the same base name consistently across GitHub, Python packaging
 
 ## Captions and browser cookies
 
-Try caption extraction without cookies first. Use `--cookies-from-browser` in the CLI or Advanced caption settings in the desktop app only when a video requires a signed-in session, such as an age-restricted or unlisted video.
+Try caption extraction without cookies first. Use `--cookies-from-browser` in the CLI or Advanced access settings in the desktop app only when a video requires a signed-in session, such as an age-restricted or unlisted video.
 
 ## Development and verification
 
@@ -173,7 +182,7 @@ Automated tests do not contact YouTube. Results can vary with YouTube changes, r
 ### No captions are found
 
 - Confirm that the video has manual or auto-generated captions
-- Set the caption language to `auto`
+- Confirm that YouTube identifies an original-language caption track
 - Update `yt-dlp`: `uv lock --upgrade-package yt-dlp && uv sync`
 
 ### `HTTP 429` appears

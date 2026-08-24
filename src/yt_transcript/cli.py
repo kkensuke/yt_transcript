@@ -13,15 +13,20 @@ from .service import ExtractionOptions, extract_transcript
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="yt-transcript",
-        description="Extract YouTube captions as Markdown.",
+        description="Extract original-language YouTube captions in multiple formats.",
     )
     parser.add_argument("url", help="YouTube URL or 11-character video ID")
     parser.add_argument(
         "--output-dir",
         type=Path,
-        help="Directory for <VIDEO_ID>_transcript.md and <VIDEO_ID>_summarized.md",
+        help="Directory for transcript and summary files",
     )
-    parser.add_argument("--no-timestamps", action="store_true", help="Omit timestamps")
+    parser.add_argument(
+        "--format",
+        choices=("md", "txt", "json", "srt", "vtt"),
+        default="md",
+        help="Transcript output format (default: md)",
+    )
     parser.add_argument("--no-summary", action="store_true", help="Skip Gemini summarization")
     parser.add_argument(
         "--summary-lang",
@@ -30,10 +35,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Summary language (default: auto)",
     )
     parser.add_argument(
-        "--caption-lang",
-        choices=("auto", "en", "ja"),
-        default="auto",
-        help="Preferred caption language (default: auto)",
+        "--long-summary",
+        choices=("skip", "truncate", "full"),
+        default="skip",
+        help=(
+            "For captions over 50,000 characters: skip, summarize a prefix, "
+            "or send the full transcript (default: skip)"
+        ),
     )
     parser.add_argument(
         "--cookies-from-browser",
@@ -52,10 +60,10 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     options = ExtractionOptions(
         url=args.url,
-        include_timestamps=not args.no_timestamps,
+        transcript_format=args.format,
         generate_summary=not args.no_summary,
         summary_language=args.summary_lang,
-        caption_language=args.caption_lang,
+        long_summary_mode=args.long_summary,
         cookie_browser=args.cookies_from_browser,
         api_key=os.getenv("GEMINI_API_KEY", "").strip(),
         gemini_model=args.gemini_model,
@@ -72,14 +80,14 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     output_dir = args.output_dir or Path.cwd()
-    transcript_path = output_dir / f"{result.video_id}_transcript.md"
+    transcript_path = output_dir / result.transcript.filename
     transcript_path.parent.mkdir(parents=True, exist_ok=True)
-    transcript_path.write_text(result.transcript, encoding="utf-8")
+    transcript_path.write_text(result.transcript.content, encoding="utf-8")
     print(f"Transcript saved to: {transcript_path}")
 
     if result.summary:
-        summary_path = transcript_path.with_name(f"{result.video_id}_summarized.md")
-        summary_path.write_text(result.summary, encoding="utf-8")
+        summary_path = output_dir / result.summary.filename
+        summary_path.write_text(result.summary.content, encoding="utf-8")
         print(f"Summary saved to: {summary_path}")
     if result.warning:
         print(f"Note: {result.warning}", file=sys.stderr)
