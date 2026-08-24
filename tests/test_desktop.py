@@ -99,7 +99,7 @@ def test_ui_removes_styles_for_the_deleted_advanced_settings_panel() -> None:
         assert removed_selector not in html
 
 
-def test_ui_has_required_timestamps_formats_long_summary_choices_and_save_all() -> None:
+def test_ui_has_required_timestamps_formats_long_summary_choices_and_result_actions() -> None:
     html = load_ui_html()
 
     assert 'id="timestampsToggle"' not in html
@@ -111,7 +111,45 @@ def test_ui_has_required_timestamps_formats_long_summary_choices_and_save_all() 
     assert 'data-summary-mode="full"' in html
     assert 'data-summary-mode="skip"' in html
     assert "Summarize all captions" in html
-    assert 'id="saveAllButton"' in html
+
+    action_ids = (
+        'id="transcriptTab"',
+        'id="copyTranscriptButton"',
+        'id="saveTranscriptButton"',
+        'id="summaryActionGroup"',
+        'id="summaryTab"',
+        'id="copySummaryButton"',
+        'id="saveSummaryButton"',
+        'id="combinedResultActions"',
+        'id="saveBothButton"',
+    )
+    positions = [html.index(action_id) for action_id in action_ids]
+    assert positions == sorted(positions)
+    assert 'aria-label="Copy transcript"' in html
+    assert 'aria-label="Save transcript"' in html
+    assert 'aria-label="Copy summary"' in html
+    assert 'aria-label="Save summary"' in html
+    assert "Save both" in html
+    assert 'id="copyButton"' not in html
+    assert 'id="saveButton"' not in html
+    assert 'id="saveAllButton"' not in html
+    assert "Save displayed" not in html
+
+
+def test_ui_result_actions_target_artifacts_without_changing_the_preview() -> None:
+    html = load_ui_html()
+
+    assert 'copyResult("transcript")' in html
+    assert 'copyResult("summary")' in html
+    assert 'saveResult("transcript", elements.saveTranscriptButton)' in html
+    assert 'saveResult("summary", elements.saveSummaryButton)' in html
+    assert "async function copyCurrentResult" not in html
+    assert "async function saveCurrentResult" not in html
+    assert "async function saveBothResults" in html
+    assert '.summaryActionGroup.classList.toggle("hidden", !hasSummary)' in html
+    assert '.combinedResultActions.classList.toggle("hidden", !hasSummary)' in html
+    assert ".artifact-action-group" in html
+    assert ".combined-result-actions" in html
 
 
 def test_ui_enables_gemini_summary_by_default() -> None:

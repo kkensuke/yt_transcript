@@ -14,7 +14,7 @@ YouTube Transcript is a command-line tool and macOS desktop app that turns origi
 - Select a Gemini Model ID from the CLI or desktop UI
 - Save transcript and summary files together with `--output-dir`
 - Use browser cookies for unlisted or age-restricted videos
-- Preview, copy, save the displayed result, or save transcript and summary together from the desktop app
+- Preview either result, copy or save transcript and summary directly, or save both together from the desktop app
 - Switch between Light and Dark in the app
 
 ## Requirements
@@ -105,7 +105,7 @@ export GEMINI_MODEL="gemini-flash-latest"  # Optional
 
 Settings shows whether the API key and model came from the environment or the app default, but it never reveals the environment API key. A key or Model ID entered in the UI overrides the environment for that run only and is never saved.
 
-Select the transcript format in Settings. Timestamps are always present, and Markdown timestamps open the video at that position. When YouTube reports source chapters, they are included without AI-generated chapter inference. The result toolbar can save the displayed artifact or save the transcript and Markdown summary together after one folder selection; existing files require confirmation before replacement.
+Select the transcript format in Settings. Timestamps are always present, and Markdown timestamps open the video at that position. When YouTube reports source chapters, they are included without AI-generated chapter inference. The result toolbar groups Copy and Save actions with their transcript or summary target, so either artifact can be handled without changing the preview. Save both writes the transcript and Markdown summary after one folder selection; existing files require confirmation before replacement.
 
 If the caption text exceeds 50,000 characters, the app shows the measured size before calling Gemini and offers three choices: summarize the first complete segments that fit within 50,000 characters, summarize all captions in one request, or keep only the transcript. The resulting summary records whether a prefix or the full over-limit source was used.
 

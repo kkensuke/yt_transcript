@@ -44,11 +44,16 @@
     summaryLimitPanel: document.getElementById("summaryLimitPanel"),
     summaryLimitMessage: document.getElementById("summaryLimitMessage"),
     transcriptTab: document.getElementById("transcriptTab"),
+    transcriptFormatBadge: document.getElementById("transcriptFormatBadge"),
+    summaryActionGroup: document.getElementById("summaryActionGroup"),
     summaryTab: document.getElementById("summaryTab"),
     markdownOutput: document.getElementById("markdownOutput"),
-    copyButton: document.getElementById("copyButton"),
-    saveButton: document.getElementById("saveButton"),
-    saveAllButton: document.getElementById("saveAllButton"),
+    copyTranscriptButton: document.getElementById("copyTranscriptButton"),
+    saveTranscriptButton: document.getElementById("saveTranscriptButton"),
+    copySummaryButton: document.getElementById("copySummaryButton"),
+    saveSummaryButton: document.getElementById("saveSummaryButton"),
+    combinedResultActions: document.getElementById("combinedResultActions"),
+    saveBothButton: document.getElementById("saveBothButton"),
     openVideoButton: document.getElementById("openVideoButton"),
     toastRegion: document.getElementById("toastRegion"),
   };
@@ -90,9 +95,13 @@
   });
   elements.apiKey.addEventListener("input", clearApiKeyError);
   elements.apiKeyVisibilityButton.addEventListener("click", toggleApiKeyVisibility);
-  elements.copyButton.addEventListener("click", copyCurrentResult);
-  elements.saveButton.addEventListener("click", saveCurrentResult);
-  elements.saveAllButton.addEventListener("click", saveAllResults);
+  elements.copyTranscriptButton.addEventListener("click", () => copyResult("transcript"));
+  elements.saveTranscriptButton.addEventListener("click", () =>
+    saveResult("transcript", elements.saveTranscriptButton));
+  elements.copySummaryButton.addEventListener("click", () => copyResult("summary"));
+  elements.saveSummaryButton.addEventListener("click", () =>
+    saveResult("summary", elements.saveSummaryButton));
+  elements.saveBothButton.addEventListener("click", saveBothResults);
   elements.openVideoButton.addEventListener("click", openCurrentVideo);
   elements.markdownOutput.addEventListener("click", handleOutputLink);
   document.querySelectorAll("[data-summary-mode]").forEach((button) => {
@@ -348,8 +357,11 @@
 
     elements.warningBanner.classList.toggle("hidden", !result.warning);
     elements.warningBanner.textContent = result.warning || "";
-    elements.summaryTab.classList.toggle("hidden", !result.summary);
-    elements.saveAllButton.classList.toggle("hidden", !result.summary);
+    const hasSummary = Boolean(result.summary);
+    elements.summaryActionGroup.classList.toggle("hidden", !hasSummary);
+    elements.combinedResultActions.classList.toggle("hidden", !hasSummary);
+    elements.transcriptFormatBadge.textContent = String(result.transcript.format || "md")
+      .toUpperCase();
 
     const summaryLimit = result.summary_limit;
     const needsSummaryChoice = Boolean(summaryLimit && summaryLimit.requires_confirmation);
@@ -373,7 +385,7 @@
     document.querySelectorAll("[data-tab]").forEach((button) => {
       const active = button.dataset.tab === tab;
       button.classList.toggle("active", active);
-      button.setAttribute("aria-selected", String(active));
+      button.setAttribute("aria-pressed", String(active));
     });
     const artifact = tab === "summary" ? state.result.summary : state.result.transcript;
     const content = artifact ? artifact.content : "";
@@ -384,9 +396,10 @@
     } else {
       elements.markdownOutput.textContent = content;
     }
-    elements.saveButton.textContent = artifact
-      ? `Save ${String(artifact.format).toUpperCase()}`
-      : "Save displayed";
+    elements.markdownOutput.setAttribute(
+      "aria-label",
+      tab === "summary" ? "Summary preview" : "Transcript preview",
+    );
   }
 
   async function resolveLongSummary(mode) {
@@ -426,11 +439,11 @@
     }
   }
 
-  async function saveCurrentResult() {
-    if (!state.result) return;
-    elements.saveButton.disabled = true;
+  async function saveResult(kind, button) {
+    if (!getArtifact(kind)) return;
+    button.disabled = true;
     try {
-      const response = await window.pywebview.api.save_result(state.activeTab);
+      const response = await window.pywebview.api.save_result(kind);
       if (!response.ok) {
         showToast(response.error || "Could not save the file.", "error");
       } else if (!response.cancelled) {
@@ -439,13 +452,13 @@
     } catch (error) {
       showToast(`Could not save the file: ${error}`, "error");
     } finally {
-      elements.saveButton.disabled = false;
+      button.disabled = false;
     }
   }
 
-  async function saveAllResults() {
+  async function saveBothResults() {
     if (!state.result || !state.result.summary) return;
-    elements.saveAllButton.disabled = true;
+    elements.saveBothButton.disabled = true;
     try {
       let response = await window.pywebview.api.save_all_results(false);
       if (response && response.needs_overwrite_confirmation) {
@@ -463,13 +476,17 @@
     } catch (error) {
       showToast(`Could not save the files: ${error}`, "error");
     } finally {
-      elements.saveAllButton.disabled = false;
+      elements.saveBothButton.disabled = false;
     }
   }
 
-  async function copyCurrentResult() {
-    if (!state.result) return;
-    const artifact = state.activeTab === "summary" ? state.result.summary : state.result.transcript;
+  function getArtifact(kind) {
+    if (!state.result || !["transcript", "summary"].includes(kind)) return null;
+    return kind === "summary" ? state.result.summary : state.result.transcript;
+  }
+
+  async function copyResult(kind) {
+    const artifact = getArtifact(kind);
     if (!artifact) return;
     const content = artifact.content;
     try {
@@ -484,7 +501,8 @@
       document.execCommand("copy");
       textarea.remove();
     }
-    showToast("Copied to the clipboard.", "success");
+    const label = kind === "summary" ? "Summary" : "Transcript";
+    showToast(`${label} copied to the clipboard.`, "success");
   }
 
   async function openCurrentVideo() {
