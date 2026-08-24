@@ -54,7 +54,6 @@ select {
 }
 
 button,
-summary,
 select,
 label[for] {
   -webkit-tap-highlight-color: transparent;
@@ -73,7 +72,6 @@ fieldset {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
-summary:focus-visible,
 .markdown-output:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
@@ -224,8 +222,7 @@ main {
   margin-bottom: 24px;
 }
 
-.section-label,
-.subsection-label {
+.section-label {
   display: block;
   margin-bottom: 4px;
   color: var(--primary);
@@ -240,7 +237,6 @@ main {
   letter-spacing: -0.025em;
 }
 
-.section-description,
 .subsection-heading p {
   margin: 5px 0 0;
   color: var(--text-muted);
@@ -446,16 +442,9 @@ select:disabled {
   min-width: 68px;
 }
 
-.toggle-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 14px;
-}
-
 .toggle-card {
   display: flex;
-  min-height: 88px;
+  min-height: 80px;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -629,60 +618,6 @@ select:disabled {
 
 .api-key-field {
   margin-top: 18px;
-}
-
-.advanced-options {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-}
-
-.advanced-options summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 16px 18px;
-  cursor: pointer;
-  list-style: none;
-}
-
-.advanced-options summary::-webkit-details-marker {
-  display: none;
-}
-
-.advanced-options summary::after {
-  color: var(--primary);
-  content: "+";
-  font-size: 22px;
-  font-weight: 500;
-}
-
-.advanced-options[open] summary::after {
-  content: "−";
-}
-
-.summary-title strong,
-.summary-title small {
-  display: block;
-}
-
-.summary-title strong {
-  color: var(--text);
-  font-size: 14px;
-}
-
-.summary-title small {
-  margin-top: 2px;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.advanced-content {
-  padding: 18px;
-  border-top: 1px solid var(--border);
-  background: var(--surface-muted);
 }
 
 .execution-summary {
@@ -1033,7 +968,6 @@ select:disabled {
     padding: 24px;
   }
 
-  .toggle-grid,
   .field-grid {
     grid-template-columns: 1fr;
   }
