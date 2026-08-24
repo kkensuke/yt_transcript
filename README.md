@@ -70,7 +70,7 @@ uv run yt-transcript "VIDEO_ID" --output-dir output/
 | `--output-dir DIR` | Directory for transcript and summary files |
 | `--format {md,txt,json,srt,vtt}` | Transcript format; defaults to `md` |
 | `--no-summary` | Skip Gemini summarization |
-| `--summary-lang LANGUAGE` | `auto` for the transcript's primary language, a common language tag, or another valid BCP 47 tag |
+| `--summary-lang LANGUAGE` | `auto` for the transcript's primary language; otherwise, a BCP 47 tag such as `en`, `ja`, `zh-Hans`, `pt-BR`, or `it` |
 | `--long-summary {skip,truncate,full}` | Behavior above 50,000 caption characters; defaults to `skip` |
 | `--cookies-from-browser BROWSER` | Use cookies from `chrome`, `chromium`, `edge`, `firefox`, `safari`, or `brave` |
 | `--gemini-model MODEL_ID` | Gemini Model ID for summarization |
