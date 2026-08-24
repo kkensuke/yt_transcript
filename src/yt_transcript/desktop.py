@@ -10,8 +10,15 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
-from .gemini import DEFAULT_GEMINI_MODEL, list_gemini_models as fetch_gemini_models
-from .service import ExtractionOptions, ExtractionResult, error_payload, extract_transcript
+from .gemini import DEFAULT_GEMINI_MODEL
+from .gemini import list_gemini_models as fetch_gemini_models
+from .service import (
+    ExtractionOptions,
+    ExtractionResult,
+    error_payload,
+    extract_transcript,
+    resolve_long_summary,
+)
 
 
 class DesktopApi:
@@ -20,6 +27,7 @@ class DesktopApi:
     def __init__(self) -> None:
         self._window: Any = None
         self._latest: ExtractionResult | None = None
+        self._pending_save_directory: Path | None = None
         self._work_lock = threading.Lock()
 
     def bind_window(self, window: Any) -> None:
@@ -67,8 +75,43 @@ class DesktopApi:
             options = ExtractionOptions.from_mapping(payload)
             result = extract_transcript(options, progress=self._emit_progress)
             self._latest = result
+            self._pending_save_directory = None
             return {"ok": True, "result": result.to_dict()}
         except Exception as exc:  # The bridge must always return serializable data.
+            return {"ok": False, "error": error_payload(exc)}
+        finally:
+            self._work_lock.release()
+
+    def summarize_latest(
+        self,
+        mode: str,
+        api_key_override: str = "",
+        summary_language: str = "auto",
+        gemini_model: str = DEFAULT_GEMINI_MODEL,
+    ) -> dict[str, Any]:
+        if not self._work_lock.acquire(blocking=False):
+            return {
+                "ok": False,
+                "error": {
+                    "code": "busy",
+                    "message": "Another video is already being processed.",
+                    "hint": "Wait for the current task to finish, then try again.",
+                },
+            }
+        try:
+            if not self._latest:
+                return {"ok": False, "error": "There is no transcript to summarize."}
+            result = resolve_long_summary(
+                self._latest,
+                mode=mode,  # type: ignore[arg-type]
+                api_key=str(api_key_override or ""),
+                language=str(summary_language or "auto"),
+                model=str(gemini_model or DEFAULT_GEMINI_MODEL),
+                progress=self._emit_progress,
+            )
+            self._latest = result
+            return {"ok": True, "result": result.to_dict()}
+        except Exception as exc:
             return {"ok": False, "error": error_payload(exc)}
         finally:
             self._work_lock.release()
@@ -79,32 +122,86 @@ class DesktopApi:
         if kind not in {"transcript", "summary"}:
             return {"ok": False, "error": "The requested result type is invalid."}
 
-        content = self._latest.transcript if kind == "transcript" else self._latest.summary
-        if not content:
+        artifact = self._latest.transcript if kind == "transcript" else self._latest.summary
+        if not artifact:
             return {"ok": False, "error": "There is no content to save."}
 
-        suffix = "transcript" if kind == "transcript" else "summarized"
-        filename = f"{self._latest.video_id}_{suffix}.md"
         try:
             import webview
 
             selected = self._window.create_file_dialog(
                 webview.FileDialog.SAVE,
-                save_filename=filename,
-                file_types=("Markdown (*.md)",),
+                save_filename=artifact.filename,
+                file_types=(_file_type_label(artifact.format),),
             )
             if not selected:
                 return {"ok": True, "cancelled": True}
             path = Path(selected[0] if not isinstance(selected, str) else selected)
-            path.write_text(content, encoding="utf-8")
+            path.write_text(artifact.content, encoding="utf-8")
             return {"ok": True, "cancelled": False, "path": str(path)}
         except Exception as exc:
             return {"ok": False, "error": f"Could not save the file: {exc}"}
 
+    def save_all_results(self, overwrite: bool = False) -> dict[str, Any]:
+        if not self._latest:
+            return {"ok": False, "error": "There are no results to save."}
+        if overwrite and self._pending_save_directory is None:
+            return {
+                "ok": False,
+                "error": "There is no pending overwrite confirmation.",
+            }
+
+        artifacts = [self._latest.transcript]
+        if self._latest.summary:
+            artifacts.append(self._latest.summary)
+        try:
+            import webview
+
+            directory = self._pending_save_directory if overwrite else None
+            if directory is None:
+                selected = self._window.create_file_dialog(webview.FileDialog.FOLDER)
+                if not selected:
+                    self._pending_save_directory = None
+                    return {"ok": True, "cancelled": True}
+                directory = Path(selected[0] if not isinstance(selected, str) else selected)
+
+            paths = [directory / artifact.filename for artifact in artifacts]
+            conflicts = [str(path) for path in paths if path.exists()]
+            if conflicts and not overwrite:
+                self._pending_save_directory = directory
+                return {
+                    "ok": False,
+                    "needs_overwrite_confirmation": True,
+                    "conflicts": conflicts,
+                }
+
+            directory.mkdir(parents=True, exist_ok=True)
+            for artifact, path in zip(artifacts, paths, strict=True):
+                path.write_text(artifact.content, encoding="utf-8")
+            self._pending_save_directory = None
+            return {
+                "ok": True,
+                "cancelled": False,
+                "paths": [str(path) for path in paths],
+            }
+        except Exception as exc:
+            self._pending_save_directory = None
+            return {"ok": False, "error": f"Could not save the files: {exc}"}
+
     def open_video(self) -> dict[str, Any]:
         if not self._latest:
             return {"ok": False, "error": "There is no video to open."}
-        return {"ok": bool(webbrowser.open(self._latest.video_url))}
+        return {"ok": bool(webbrowser.open(self._latest.document.metadata.url))}
+
+    def open_video_at(self, seconds: float) -> dict[str, Any]:
+        if not self._latest:
+            return {"ok": False, "error": "There is no video to open."}
+        try:
+            start = max(0, int(float(seconds)))
+        except (TypeError, ValueError):
+            return {"ok": False, "error": "The timestamp is invalid."}
+        url = f"{self._latest.document.metadata.url}&t={start}s"
+        return {"ok": bool(webbrowser.open(url))}
 
     def _emit_progress(self, percent: int, message: str) -> None:
         if not self._window:
@@ -115,6 +212,17 @@ class DesktopApi:
         )
         with suppress(Exception):
             self._window.run_js(f"window.App && window.App.onProgress({payload});")
+
+
+def _file_type_label(output_format: str) -> str:
+    labels = {
+        "md": "Markdown (*.md)",
+        "txt": "Text (*.txt)",
+        "json": "JSON (*.json)",
+        "srt": "SubRip (*.srt)",
+        "vtt": "WebVTT (*.vtt)",
+    }
+    return labels.get(output_format, "All files (*.*)")
 
 
 def load_ui_html() -> str:

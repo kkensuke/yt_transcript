@@ -7,8 +7,8 @@ import urllib.parse
 import urllib.request
 
 from .errors import GeminiApiError
+from .models import VideoMetadata
 from .utils import detect_language, format_timestamp
-from .youtube import VideoMetadata
 
 DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL") or "gemini-flash-lite-latest"
 GEMINI_API_ROOT = "https://generativelanguage.googleapis.com/v1beta"
@@ -59,7 +59,7 @@ def call_gemini_api(
     language: str = "auto",
     model: str = DEFAULT_GEMINI_MODEL,
 ) -> str:
-    """Summarize transcript Markdown with Gemini's generateContent endpoint."""
+    """Summarize normalized caption text with Gemini's generateContent endpoint."""
     if not api_key.strip():
         raise GeminiApiError("No Gemini API key is configured.")
 
@@ -140,12 +140,18 @@ structured Markdown document.
 {text}"""
 
 
-def create_summary_markdown(metadata: VideoMetadata, summary: str) -> str:
+def create_summary_markdown(
+    metadata: VideoMetadata,
+    summary: str,
+    *,
+    source_note: str | None = None,
+) -> str:
+    note = f"\n*{source_note}*\n" if source_note else ""
     return (
         f"# {metadata.title} - Summary\n\n"
         f"**Video ID:** {metadata.video_id}  \n"
         f"**YouTube URL:** {metadata.url}  \n"
         f"**Duration:** {format_timestamp(metadata.duration)}\n\n"
-        f"---\n\n{summary.strip()}\n\n"
+        f"---\n\n{summary.strip()}\n{note}\n"
         "---\n\n*Summary generated using Gemini*\n"
     )
