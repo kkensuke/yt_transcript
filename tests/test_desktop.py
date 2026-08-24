@@ -152,6 +152,22 @@ def test_ui_result_actions_target_artifacts_without_changing_the_preview() -> No
     assert ".combined-result-actions" in html
 
 
+def test_ui_result_selector_hover_emphasizes_only_inactive_buttons() -> None:
+    html = load_ui_html()
+
+    hover_rule = re.search(
+        r"\.artifact-selector:not\(\.active\):hover:not\(:disabled\)\s*\{(?P<body>.*?)\}",
+        html,
+        re.S,
+    )
+    assert hover_rule is not None
+    assert "color: var(--primary)" in hover_rule.group("body")
+    assert "background: var(--surface)" in hover_rule.group("body")
+    assert "box-shadow: inset 0 0 0 1px var(--border-strong)" in hover_rule.group("body")
+    assert ".tab:hover:not(:disabled)" not in html
+    assert ".tab:not(.active):hover:not(:disabled)" in html
+
+
 def test_ui_enables_gemini_summary_by_default() -> None:
     html = load_ui_html()
     summary_toggle = re.search(r'<input\s+id="summaryToggle"(?P<attrs>[^>]*)>', html, re.S)
