@@ -883,11 +883,18 @@ select:disabled {
   cursor: pointer;
   font-size: 13px;
   font-weight: 750;
+  transition: color 150ms ease, background 150ms ease, box-shadow 150ms ease;
 }
 
-.tab:hover:not(:disabled) {
+.tab:not(.active):hover:not(:disabled) {
   color: var(--text);
   background: var(--surface-muted);
+}
+
+.artifact-selector:not(.active):hover:not(:disabled) {
+  color: var(--primary);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
 }
 
 .tab:disabled {
