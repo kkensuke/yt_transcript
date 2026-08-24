@@ -110,16 +110,10 @@
           >
             <fieldset class="workflow-block">
               <legend class="workflow-title">Transcript settings</legend>
-              <p class="workflow-description">
-                Choose the file format and optional browser access for restricted videos.
-              </p>
 
               <div class="field-grid">
                 <div class="field-block">
                   <label class="field-label" for="transcriptFormat">Transcript format</label>
-                  <p id="transcriptFormatHelp" class="field-description">
-                    Timestamps are always included; Markdown timestamps open the video.
-                  </p>
                   <select id="transcriptFormat" aria-describedby="transcriptFormatHelp">
                     <option value="md">Markdown (.md)</option>
                     <option value="txt">Plain text (.txt)</option>
@@ -131,9 +125,6 @@
 
                 <div class="field-block">
                   <label class="field-label" for="cookieBrowser">Browser cookies</label>
-                  <p id="cookieBrowserHelp" class="field-description">
-                    Leave this off unless the video requires a signed-in browser.
-                  </p>
                   <select id="cookieBrowser" aria-describedby="cookieBrowserHelp">
                     <option value="">None (recommended)</option>
                     <option value="chrome">Chrome</option>
@@ -143,6 +134,9 @@
                     <option value="brave">Brave</option>
                     <option value="chromium">Chromium</option>
                   </select>
+                  <p id="cookieBrowserHelp" class="field-description">
+                    Use cookies for restricted videos.
+                  </p>
                 </div>
               </div>
             </fieldset>
@@ -181,9 +175,6 @@
               <div class="field-grid">
                 <div class="field-block">
                   <label class="field-label" for="summaryLanguage">Summary language</label>
-                  <p id="summaryLanguageHelp" class="field-description">
-                    “Same as transcript” asks Gemini to use the captions' primary language.
-                  </p>
                   <select id="summaryLanguage" aria-describedby="summaryLanguageHelp">
                     <option value="auto">Same as transcript</option>
                   </select>
@@ -215,14 +206,11 @@
 
                 <div class="field-block">
                   <label class="field-label" for="geminiModel">Gemini Model ID</label>
-                  <p id="geminiModelHelp" class="field-description">
-                    The model ID sent to the Google Gemini API.
-                  </p>
                   <input
                     id="geminiModel"
                     type="text"
                     spellcheck="false"
-                    aria-describedby="geminiModelHelp geminiModelSource"
+                    aria-describedby="geminiModelSource"
                     placeholder="Example: gemini-flash-latest"
                   >
                   <p id="geminiModelSource" class="field-status">Checking the configuration source.</p>

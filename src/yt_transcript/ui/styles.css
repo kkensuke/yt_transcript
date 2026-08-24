@@ -285,15 +285,25 @@ main {
   font-size: 16px;
 }
 
-.workflow-description,
 .field-description {
   margin: 5px 0 10px;
+  padding: 0 8px;
   color: var(--text-muted);
   font-size: 13px;
 }
 
 .field-block {
   min-width: 0;
+}
+
+.field-label + input,
+.field-label + select {
+  margin-top: 8px;
+}
+
+.field-block > input + .field-description,
+.field-block > select + .field-description {
+  margin: 8px 0 0;
 }
 
 .custom-language-field {

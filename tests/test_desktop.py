@@ -24,7 +24,7 @@ def test_ui_assets_are_inlined_without_external_dependencies() -> None:
     assert "<style>" in html
 
 
-def test_ui_explains_each_setting_before_its_control() -> None:
+def test_ui_labels_each_setting_before_its_control() -> None:
     html = load_ui_html()
     label_and_control_pairs = [
         ('for="videoUrl">YouTube video</label>', 'id="videoUrl"'),
@@ -52,6 +52,22 @@ def test_ui_labels_and_descriptions_reference_existing_controls() -> None:
         assert target in ids
     for references in re.findall(r'aria-describedby="([^"]+)"', html):
         assert set(references.split()).issubset(ids)
+
+
+def test_ui_places_grid_controls_before_optional_help_text() -> None:
+    html = load_ui_html()
+
+    for control, help_text in (
+        ('id="transcriptFormat"', 'id="transcriptFormatHelp"'),
+        ('id="cookieBrowser"', 'id="cookieBrowserHelp"'),
+        ('id="summaryLanguage"', 'id="summaryLanguageHelp"'),
+    ):
+        assert html.index(control) < html.index(help_text)
+
+    assert 'id="geminiModelHelp"' not in html
+    assert 'aria-describedby="geminiModelSource"' in html
+    assert ".field-label + input" in html
+    assert ".field-block > select + .field-description" in html
 
 
 def test_ui_contains_every_element_required_by_the_main_script() -> None:
@@ -198,7 +214,7 @@ def test_ui_uses_shared_summary_languages_and_sends_custom_tags() -> None:
 
     assert '<option value="auto">Same as transcript</option>' in html
     assert 'id="customSummaryLanguage"' in html
-    assert 'otherOption.textContent = "Other…"' in html
+    assert 'otherOption.textContent = "Otherâ€¦"' in html
     assert "summary_language: selectedSummaryLanguage()" in html
     assert "selectedSummaryLanguage()," in html
     assert "BCP47_LANGUAGE_PATTERN" in html
