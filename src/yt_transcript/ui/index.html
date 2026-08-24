@@ -316,37 +316,79 @@
           </div>
         </section>
 
-        <div class="result-toolbar">
-          <div class="tabs" role="tablist" aria-label="Result to display">
+        <div class="result-toolbar" role="group" aria-label="Result previews and actions">
+          <div class="artifact-action-group" role="group" aria-label="Transcript">
             <button
               id="transcriptTab"
-              class="tab active"
+              class="tab active artifact-selector"
               type="button"
-              role="tab"
-              aria-selected="true"
+              aria-pressed="true"
+              aria-controls="markdownOutput"
               data-tab="transcript"
-            >Transcript</button>
+            >
+              Transcript
+              <span id="transcriptFormatBadge" class="artifact-format">MD</span>
+            </button>
+            <div class="artifact-actions" role="group" aria-label="Transcript actions">
+              <button
+                id="copyTranscriptButton"
+                class="button artifact-action"
+                type="button"
+                aria-label="Copy transcript"
+              >Copy</button>
+              <button
+                id="saveTranscriptButton"
+                class="button artifact-action"
+                type="button"
+                aria-label="Save transcript"
+              >Save</button>
+            </div>
+          </div>
+
+          <div
+            id="summaryActionGroup"
+            class="artifact-action-group hidden"
+            role="group"
+            aria-label="Summary"
+          >
             <button
               id="summaryTab"
-              class="tab hidden"
+              class="tab artifact-selector"
               type="button"
-              role="tab"
-              aria-selected="false"
+              aria-pressed="false"
+              aria-controls="markdownOutput"
               data-tab="summary"
-            >Gemini summary</button>
+            >Summary</button>
+            <div class="artifact-actions" role="group" aria-label="Summary actions">
+              <button
+                id="copySummaryButton"
+                class="button artifact-action"
+                type="button"
+                aria-label="Copy summary"
+              >Copy</button>
+              <button
+                id="saveSummaryButton"
+                class="button artifact-action"
+                type="button"
+                aria-label="Save summary"
+              >Save</button>
+            </div>
           </div>
-          <div class="result-actions">
-            <button id="copyButton" class="button button-secondary" type="button">Copy</button>
-            <button id="saveAllButton" class="button button-secondary hidden" type="button">
-              Save all
-            </button>
-            <button id="saveButton" class="button button-primary-small" type="button">
-              Save displayed
+
+          <div id="combinedResultActions" class="combined-result-actions hidden">
+            <button id="saveBothButton" class="button button-primary-small" type="button">
+              Save both
             </button>
           </div>
         </div>
 
-        <article id="markdownOutput" class="markdown-output" tabindex="0"></article>
+        <article
+          id="markdownOutput"
+          class="markdown-output"
+          tabindex="0"
+          role="region"
+          aria-label="Transcript preview"
+        ></article>
       </section>
     </main>
   </div>
