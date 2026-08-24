@@ -1,7 +1,7 @@
 from yt_transcript.utils import (
-    clean_japanese_text,
     detect_language,
     format_timestamp,
+    normalize_caption_spacing,
     vtt_time_to_seconds,
 )
 
@@ -22,5 +22,7 @@ def test_language_detection_prefers_metadata() -> None:
     assert detect_language("An English video") == "en"
 
 
-def test_clean_japanese_text_removes_caption_noise_and_spacing() -> None:
-    assert clean_japanese_text("[音楽] こ れ は テ ス ト です") == "これはテストです"
+def test_caption_spacing_preserves_cues_and_removes_japanese_spacing() -> None:
+    assert normalize_caption_spacing("[音楽] こ れ は テ ス ト です  ♪") == (
+        "[音楽] これはテストです ♪"
+    )

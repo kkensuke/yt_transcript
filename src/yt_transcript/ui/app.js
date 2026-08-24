@@ -1,6 +1,9 @@
 (() => {
   "use strict";
 
+  const OTHER_SUMMARY_LANGUAGE = "__other__";
+  const BCP47_LANGUAGE_PATTERN = /^(?=.{2,35}$)[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
+
   const elements = {
     form: document.getElementById("extractForm"),
     executeFormTab: document.getElementById("executeFormTab"),
@@ -13,6 +16,9 @@
     summary: document.getElementById("summaryToggle"),
     summaryOptions: document.getElementById("summaryOptions"),
     summaryLanguage: document.getElementById("summaryLanguage"),
+    customSummaryLanguageBlock: document.getElementById("customSummaryLanguageBlock"),
+    customSummaryLanguage: document.getElementById("customSummaryLanguage"),
+    customSummaryLanguageError: document.getElementById("customSummaryLanguageError"),
     cookieBrowser: document.getElementById("cookieBrowser"),
     apiKey: document.getElementById("apiKey"),
     apiKeyLabel: document.getElementById("apiKeyLabel"),
@@ -68,6 +74,7 @@
       gemini_model: "gemini-flash-lite-latest",
       gemini_model_source: "default",
       gemini_model_environment_variable: "GEMINI_MODEL",
+      summary_languages: [{ code: "auto", label: "Same as transcript" }],
     },
     result: null,
     activeFormTab: "execute",
@@ -87,7 +94,14 @@
   elements.form.addEventListener("submit", handleSubmit);
   elements.summary.addEventListener("change", syncSummaryOptions);
   elements.transcriptFormat.addEventListener("change", updateExecutionSummary);
-  elements.summaryLanguage.addEventListener("change", updateExecutionSummary);
+  elements.summaryLanguage.addEventListener("change", () => {
+    syncSummaryLanguageInput();
+    updateExecutionSummary();
+  });
+  elements.customSummaryLanguage.addEventListener("input", () => {
+    clearSummaryLanguageError();
+    updateExecutionSummary();
+  });
   elements.cookieBrowser.addEventListener("change", updateExecutionSummary);
   elements.videoUrl.addEventListener("input", () => {
     clearUrlError();
@@ -122,6 +136,7 @@
     try {
       state.appInfo = await window.pywebview.api.get_app_info();
       state.bridgeReady = true;
+      renderSummaryLanguages();
       elements.geminiModel.value = state.appInfo.gemini_model || "gemini-flash-lite-latest";
       elements.versionLabel.textContent = `v${state.appInfo.version || ""}`;
       elements.bridgeStatus.className = "status-pill status-ready";
@@ -147,9 +162,72 @@
     elements.summaryOptions.classList.toggle("hidden", !enabled);
     elements.summaryOptions.setAttribute("aria-hidden", String(!enabled));
     elements.summary.setAttribute("aria-expanded", String(enabled));
-    if (!enabled) clearApiKeyError();
+    if (!enabled) {
+      clearApiKeyError();
+      clearSummaryLanguageError();
+    }
+    syncSummaryLanguageInput();
     updateExecutionSummary();
     syncActionState();
+  }
+
+  function renderSummaryLanguages() {
+    const currentLanguage = selectedSummaryLanguage();
+    const configuredLanguages = Array.isArray(state.appInfo.summary_languages)
+      ? state.appInfo.summary_languages
+      : [];
+    const languages = configuredLanguages.length
+      ? configuredLanguages
+      : [{ code: "auto", label: "Same as transcript" }];
+
+    elements.summaryLanguage.replaceChildren(
+      ...languages.map((language) => {
+        const option = document.createElement("option");
+        option.value = String(language.code || "");
+        option.textContent = String(language.label || language.code || "");
+        return option;
+      }),
+    );
+    const otherOption = document.createElement("option");
+    otherOption.value = OTHER_SUMMARY_LANGUAGE;
+    otherOption.textContent = "Other…";
+    elements.summaryLanguage.appendChild(otherOption);
+
+    const matchingOption = Array.from(elements.summaryLanguage.options).find(
+      (option) => option.value.toLowerCase() === currentLanguage.toLowerCase(),
+    );
+    if (matchingOption && matchingOption.value !== OTHER_SUMMARY_LANGUAGE) {
+      elements.summaryLanguage.value = matchingOption.value;
+    } else if (currentLanguage && currentLanguage !== "auto") {
+      elements.summaryLanguage.value = OTHER_SUMMARY_LANGUAGE;
+      elements.customSummaryLanguage.value = currentLanguage;
+    } else {
+      elements.summaryLanguage.value = "auto";
+    }
+    syncSummaryLanguageInput();
+  }
+
+  function syncSummaryLanguageInput() {
+    const custom = elements.summaryLanguage.value === OTHER_SUMMARY_LANGUAGE;
+    elements.customSummaryLanguageBlock.classList.toggle("hidden", !custom);
+    elements.customSummaryLanguageBlock.setAttribute("aria-hidden", String(!custom));
+    elements.customSummaryLanguage.disabled = state.busy || !elements.summary.checked || !custom;
+    if (!custom) clearSummaryLanguageError();
+  }
+
+  function selectedSummaryLanguage() {
+    if (elements.summaryLanguage.value === OTHER_SUMMARY_LANGUAGE) {
+      return elements.customSummaryLanguage.value.trim();
+    }
+    return elements.summaryLanguage.value || "auto";
+  }
+
+  function selectedSummaryLanguageLabel() {
+    if (elements.summaryLanguage.value === OTHER_SUMMARY_LANGUAGE) {
+      return elements.customSummaryLanguage.value.trim() || "Other language";
+    }
+    const selected = elements.summaryLanguage.options[elements.summaryLanguage.selectedIndex];
+    return selected ? selected.text : "Same as transcript";
   }
 
   function renderConfigurationSources() {
@@ -190,9 +268,7 @@
       "Captions: original language",
     ];
     if (elements.summary.checked) {
-      const summaryLanguage =
-        elements.summaryLanguage.options[elements.summaryLanguage.selectedIndex].text;
-      parts.push(`Summary: ${summaryLanguage}`);
+      parts.push(`Summary: ${selectedSummaryLanguageLabel()}`);
     } else {
       parts.push("Summary: off");
     }
@@ -258,6 +334,11 @@
       setUrlError("Enter a YouTube URL or video ID.");
       return;
     }
+    if (!validateSummaryLanguage()) {
+      switchFormTab("settings");
+      elements.customSummaryLanguage.focus();
+      return;
+    }
     clearApiKeyError();
     if (
       elements.summary.checked &&
@@ -288,7 +369,7 @@
       url,
       transcript_format: elements.transcriptFormat.value,
       generate_summary: elements.summary.checked,
-      summary_language: elements.summaryLanguage.value,
+      summary_language: selectedSummaryLanguage(),
       long_summary_mode: "ask",
       cookie_browser: elements.cookieBrowser.value,
       api_key: elements.apiKey.value.trim(),
@@ -331,6 +412,7 @@
       elements.transcriptFormat,
       elements.summary,
       elements.summaryLanguage,
+      elements.customSummaryLanguage,
       elements.cookieBrowser,
       elements.apiKey,
       elements.apiKeyVisibilityButton,
@@ -338,6 +420,7 @@
     ].forEach((control) => {
       control.disabled = busy;
     });
+    syncSummaryLanguageInput();
     document.querySelectorAll("[data-summary-mode]").forEach((button) => {
       button.disabled = busy;
     });
@@ -404,6 +487,12 @@
 
   async function resolveLongSummary(mode) {
     if (!state.result || state.busy || !["truncate", "full", "skip"].includes(mode)) return;
+    if (mode !== "skip" && !validateSummaryLanguage()) {
+      switchFormTab("settings");
+      elements.customSummaryLanguage.focus();
+      showToast("Enter a valid summary language tag.", "error");
+      return;
+    }
     setBusy(true);
     hideError();
     elements.progressPanel.classList.remove("hidden");
@@ -412,7 +501,7 @@
       const response = await window.pywebview.api.summarize_latest(
         mode,
         elements.apiKey.value.trim(),
-        elements.summaryLanguage.value,
+        selectedSummaryLanguage(),
         elements.geminiModel.value.trim(),
       );
       if (!response || !response.ok) {
@@ -560,6 +649,31 @@
     elements.apiKeyError.classList.add("hidden");
     elements.apiKeyError.textContent = "";
     elements.apiKey.removeAttribute("aria-invalid");
+  }
+
+  function validateSummaryLanguage() {
+    clearSummaryLanguageError();
+    if (!elements.summary.checked || elements.summaryLanguage.value !== OTHER_SUMMARY_LANGUAGE) {
+      return true;
+    }
+    const language = elements.customSummaryLanguage.value.trim();
+    if (!BCP47_LANGUAGE_PATTERN.test(language)) {
+      setSummaryLanguageError("Enter a valid BCP 47 tag, such as it, ar, or pt-PT.");
+      return false;
+    }
+    return true;
+  }
+
+  function setSummaryLanguageError(message) {
+    elements.customSummaryLanguageError.textContent = message;
+    elements.customSummaryLanguageError.classList.remove("hidden");
+    elements.customSummaryLanguage.setAttribute("aria-invalid", "true");
+  }
+
+  function clearSummaryLanguageError() {
+    elements.customSummaryLanguageError.classList.add("hidden");
+    elements.customSummaryLanguageError.textContent = "";
+    elements.customSummaryLanguage.removeAttribute("aria-invalid");
   }
 
   function showToast(message, type = "info") {

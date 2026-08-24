@@ -56,3 +56,28 @@ def test_list_gemini_models_filters_generate_content_and_follows_pagination(monk
     ]
     assert "pageToken=page-2" in requested_urls[1]
     assert "secret-key" in requested_urls[0]
+
+
+def test_auto_prompt_asks_gemini_to_follow_the_transcript_language() -> None:
+    prompt = gemini._build_prompt("字幕 text", "auto")
+
+    assert "Write the summary in the same primary language as the transcript." in prompt
+    assert "Retain important source-language technical terms" in prompt
+    assert "字幕 text" in prompt
+
+
+def test_explicit_and_custom_languages_use_the_same_prompt_structure() -> None:
+    japanese_prompt = gemini._build_prompt("Source", "ja")
+    custom_prompt = gemini._build_prompt("Source", "it")
+
+    assert "Write the complete summary in Japanese." in japanese_prompt
+    assert 'Write the complete summary in the language identified by BCP 47 tag "it".' in (
+        custom_prompt
+    )
+    for instruction in (
+        "Preserve important claims, evidence, and conclusions",
+        "Retain important source-language technical terms in parentheses when helpful",
+        "Return only the summary document",
+    ):
+        assert instruction in japanese_prompt
+        assert instruction in custom_prompt

@@ -8,9 +8,9 @@ YouTube Transcript is a command-line tool and macOS desktop app that turns origi
 - Create Markdown, plain text, JSON, SRT, or VTT from one structured transcript
 - Include timestamps in every format, with clickable YouTube timestamps in Markdown
 - Include source chapters reported by YouTube in Markdown, text, and JSON output
-- Summarize in Japanese, English, or an automatically detected language with Gemini
+- Summarize in the transcript's primary language, one of 10 common languages, or another language identified by a BCP 47 tag with Gemini
 - Ask before summarizing captions longer than 50,000 characters: summarize a segment-boundary prefix, send all captions, or keep only the transcript
-- Load the currently available Gemini `generateContent` models in the desktop UI
+- Load the currently available Gemini `generateContent` models in the CLI or desktop UI
 - Select a Gemini Model ID from the CLI or desktop UI
 - Save transcript and summary files together with `--output-dir`
 - Use browser cookies for unlisted or age-restricted videos
@@ -52,6 +52,12 @@ uv run yt-transcript "VIDEO_ID" --cookies-from-browser chrome
 # Select a Gemini Model ID from the CLI
 uv run yt-transcript "VIDEO_ID" --gemini-model "gemini-flash-latest"
 
+# List Gemini models that can generate summaries (no video URL is required)
+uv run yt-transcript --list-gemini-models
+
+# Write the summary in French or another language identified by a BCP 47 tag
+uv run yt-transcript "VIDEO_ID" --summary-lang fr
+
 # Recommended when writing files to another directory
 uv run yt-transcript "VIDEO_ID" --output-dir output/
 ```
@@ -60,14 +66,15 @@ uv run yt-transcript "VIDEO_ID" --output-dir output/
 
 | Option | Description |
 |---|---|
-| `url` | YouTube URL or 11-character video ID |
+| `url` | YouTube URL or 11-character video ID; omitted with `--list-gemini-models` |
 | `--output-dir DIR` | Directory for transcript and summary files |
 | `--format {md,txt,json,srt,vtt}` | Transcript format; defaults to `md` |
 | `--no-summary` | Skip Gemini summarization |
-| `--summary-lang {auto,en,ja}` | Summary language |
+| `--summary-lang LANGUAGE` | `auto` for the transcript's primary language, a common language tag, or another valid BCP 47 tag |
 | `--long-summary {skip,truncate,full}` | Behavior above 50,000 caption characters; defaults to `skip` |
 | `--cookies-from-browser BROWSER` | Use cookies from `chrome`, `chromium`, `edge`, `firefox`, `safari`, or `brave` |
 | `--gemini-model MODEL_ID` | Gemini Model ID for summarization |
+| `--list-gemini-models` | List models that support `generateContent`, one ID per line, then exit |
 
 With `--output-dir output/`, the transcript is saved as `output/<VIDEO_ID>_transcript.<FORMAT>` and, when summarization succeeds, its Markdown summary is saved as `output/<VIDEO_ID>_summarized.md`.
 
@@ -82,6 +89,8 @@ The Gemini Model ID is selected in this order:
 3. The built-in default, `gemini-flash-lite-latest`
 
 The API key cannot be passed as a command-line argument. Set `GEMINI_API_KEY` for CLI use so the key does not appear in the command history.
+
+`--summary-lang auto` asks Gemini to write in the same primary language as the transcript. The shared common choices are English (`en`), Japanese (`ja`), Simplified Chinese (`zh-Hans`), Traditional Chinese (`zh-Hant`), Korean (`ko`), Spanish (`es`), French (`fr`), German (`de`), Brazilian Portuguese (`pt-BR`), and Hindi (`hi`). Other valid BCP 47 tags, such as `it`, `ar`, or `uk`, are also accepted.
 
 ## Desktop app
 
@@ -105,13 +114,13 @@ export GEMINI_MODEL="gemini-flash-latest"  # Optional
 
 Settings shows whether the API key and model came from the environment or the app default, but it never reveals the environment API key. A key or Model ID entered in the UI overrides the environment for that run only and is never saved.
 
-Select the transcript format in Settings. Timestamps are always present, and Markdown timestamps open the video at that position. When YouTube reports source chapters, they are included without AI-generated chapter inference. The result toolbar groups Copy and Save actions with their transcript or summary target, so either artifact can be handled without changing the preview. Save both writes the transcript and Markdown summary after one folder selection; existing files require confirmation before replacement.
+Select the transcript format and summary language in Settings. **Same as transcript** asks Gemini to use the captions' primary language. Ten common languages are available directly; select **Other…** to enter another BCP 47 language tag. Timestamps are always present, and Markdown timestamps open the video at that position. When YouTube reports source chapters, they are included without AI-generated chapter inference. The result toolbar groups Copy and Save actions with their transcript or summary target, so either artifact can be handled without changing the preview. Save both writes the transcript and Markdown summary after one folder selection; existing files require confirmation before replacement.
 
 If the caption text exceeds 50,000 characters, the app shows the measured size before calling Gemini and offers three choices: summarize the first complete segments that fit within 50,000 characters, summarize all captions in one request, or keep only the transcript. The resulting summary records whether a prefix or the full over-limit source was used.
 
 ### Available Gemini models
 
-In Settings, select **Load available models** to query the Gemini Models API. The app lists only models that advertise support for `generateContent`. The current text field remains editable, so a Model ID can still be entered manually. If `GEMINI_API_KEY` is already configured, the app also attempts to load the list when the desktop bridge becomes ready.
+Run `uv run yt-transcript --list-gemini-models` in the CLI or select **Load available models** in Settings to query the Gemini Models API. Both list only models that advertise support for `generateContent`. The CLI reads `GEMINI_API_KEY` and prints one Model ID per line. In the app, the current text field remains editable, so a Model ID can still be entered manually. If `GEMINI_API_KEY` is already configured, the app also attempts to load the list when the desktop bridge becomes ready.
 
 ### Appearance and zoom
 
@@ -165,6 +174,8 @@ The project uses the same base name consistently across GitHub, Python packaging
 ## Captions and browser cookies
 
 Try caption extraction without cookies first. Use `--cookies-from-browser` in the CLI or **Browser cookies** in the desktop app only when a video requires a signed-in session, such as an age-restricted or unlisted video.
+
+Caption cues such as `[音楽]`, `[拍手]`, and `♪` are preserved. The ingestion step normalizes whitespace, including unwanted spaces between Japanese characters, without deleting cue text.
 
 ## Development and verification
 

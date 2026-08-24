@@ -19,7 +19,7 @@ from .errors import (
     VideoFetchError,
 )
 from .models import CaptionTrack, Chapter, TranscriptDocument, TranscriptSegment, VideoMetadata
-from .utils import clean_japanese_text, detect_language, vtt_time_to_seconds
+from .utils import detect_language, normalize_caption_spacing, vtt_time_to_seconds
 
 VIDEO_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
 YOUTUBE_HOST_PATTERN = re.compile(
@@ -324,7 +324,7 @@ def _join_json3_segments(parts: Iterable[str]) -> str:
         if text and _needs_segment_space(text[-1], part[0]):
             text += " "
         text += part
-    return re.sub(r"\s+", " ", text).strip()
+    return text.strip()
 
 
 def _needs_segment_space(left: str, right: str) -> bool:
@@ -336,7 +336,7 @@ def _needs_segment_space(left: str, right: str) -> bool:
 def _normalize_entries(entries: list[TranscriptSegment]) -> tuple[TranscriptSegment, ...]:
     prepared: list[TranscriptSegment] = []
     for entry in entries:
-        text = clean_japanese_text(re.sub(r"\s+", " ", entry.text).strip())
+        text = normalize_caption_spacing(entry.text)
         if text:
             prepared.append(
                 TranscriptSegment(

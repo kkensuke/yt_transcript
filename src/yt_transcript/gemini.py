@@ -8,7 +8,12 @@ import urllib.request
 
 from .errors import GeminiApiError
 from .models import VideoMetadata
-from .utils import detect_language, format_timestamp
+from .summary_languages import (
+    AUTO_SUMMARY_LANGUAGE,
+    normalize_summary_language,
+    summary_language_prompt_name,
+)
+from .utils import format_timestamp
 
 DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL") or "gemini-flash-lite-latest"
 GEMINI_API_ROOT = "https://generativelanguage.googleapis.com/v1beta"
@@ -63,8 +68,7 @@ def call_gemini_api(
     if not api_key.strip():
         raise GeminiApiError("No Gemini API key is configured.")
 
-    resolved_language = detect_language(text) if language == "auto" else language
-    prompt = _build_prompt(text, resolved_language)
+    prompt = _build_prompt(text, language)
     query = urllib.parse.urlencode({"key": api_key.strip()})
     model_name = urllib.parse.quote(model.strip(), safe="-_.")
     url = f"{GEMINI_API_ROOT}/models/{model_name}:generateContent?{query}"
@@ -109,29 +113,21 @@ def _http_error_message(error: urllib.error.HTTPError) -> str:
 
 
 def _build_prompt(text: str, language: str) -> str:
-    if language == "ja":
-        return f"""Summarize the following YouTube transcript in Japanese as a clear,
-structured Markdown document.
-
-- Write the complete summary in natural Japanese
-- Preserve important claims, evidence, and conclusions
-- Use headings and lists where they improve readability
-- Correct obvious ASR errors from context
-- Mark uncertain interpretations with [Uncertain]
-- Include English equivalents for technical terms in parentheses when helpful
-- Use LaTeX for formulas when helpful
-- Return only the summary document, without a preface or acknowledgement
-
----
-
-{text}"""
+    normalized_language = normalize_summary_language(language)
+    if normalized_language == AUTO_SUMMARY_LANGUAGE:
+        language_instruction = "Write the summary in the same primary language as the transcript."
+    else:
+        language_name = summary_language_prompt_name(normalized_language)
+        language_instruction = f"Write the complete summary in {language_name}."
 
     return f"""Summarize the following YouTube transcript as a clear, structured Markdown document.
 
+- {language_instruction}
 - Preserve important claims, evidence, and conclusions
 - Use headings and lists where they improve readability
 - Correct obvious ASR errors from context
 - Mark uncertain interpretations with [Uncertain]
+- Retain important source-language technical terms in parentheses when helpful
 - Use LaTeX for formulas when helpful
 - Return only the summary document, without a preface or acknowledgement
 

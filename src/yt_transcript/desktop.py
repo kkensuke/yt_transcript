@@ -19,6 +19,7 @@ from .service import (
     extract_transcript,
     resolve_long_summary,
 )
+from .summary_languages import summary_language_options
 
 
 class DesktopApi:
@@ -44,6 +45,7 @@ class DesktopApi:
             "gemini_model": model_from_environment or DEFAULT_GEMINI_MODEL,
             "gemini_model_source": "environment" if model_from_environment else "default",
             "gemini_model_environment_variable": "GEMINI_MODEL",
+            "summary_languages": summary_language_options(),
         }
 
     def list_gemini_models(self, api_key_override: str = "") -> dict[str, Any]:

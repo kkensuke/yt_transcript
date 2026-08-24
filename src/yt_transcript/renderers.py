@@ -4,7 +4,7 @@ import json
 from collections.abc import Iterable
 
 from .models import OutputArtifact, OutputFormat, TranscriptDocument, TranscriptSegment
-from .utils import clean_japanese_text, format_timestamp
+from .utils import format_timestamp
 
 SUPPORTED_OUTPUT_FORMATS: tuple[OutputFormat, ...] = ("md", "txt", "json", "srt", "vtt")
 
@@ -163,7 +163,7 @@ def _paragraphs(segments: Iterable[TranscriptSegment]) -> list[tuple[float, str]
         nonlocal parts, start, length
         if not parts:
             return
-        text = clean_japanese_text(" ".join(parts))
+        text = " ".join(parts).strip()
         if text:
             paragraphs.append((start, text))
         parts = []
