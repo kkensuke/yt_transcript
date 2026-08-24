@@ -182,13 +182,35 @@
                 <div class="field-block">
                   <label class="field-label" for="summaryLanguage">Summary language</label>
                   <p id="summaryLanguageHelp" class="field-description">
-                    Choose the language Gemini should use for the summary.
+                    “Same as transcript” asks Gemini to use the captions' primary language.
                   </p>
                   <select id="summaryLanguage" aria-describedby="summaryLanguageHelp">
-                    <option value="auto">Auto-detect</option>
-                    <option value="ja">Japanese</option>
-                    <option value="en">English</option>
+                    <option value="auto">Same as transcript</option>
                   </select>
+                  <div
+                    id="customSummaryLanguageBlock"
+                    class="custom-language-field hidden"
+                    aria-hidden="true"
+                  >
+                    <label class="field-label" for="customSummaryLanguage">Language tag</label>
+                    <p id="customSummaryLanguageHelp" class="field-description">
+                      Enter a BCP 47 tag, such as it, ar, or uk.
+                    </p>
+                    <input
+                      id="customSummaryLanguage"
+                      type="text"
+                      spellcheck="false"
+                      autocomplete="off"
+                      placeholder="Example: it"
+                      aria-describedby="customSummaryLanguageHelp customSummaryLanguageError"
+                      disabled
+                    >
+                    <p
+                      id="customSummaryLanguageError"
+                      class="field-error hidden"
+                      role="alert"
+                    ></p>
+                  </div>
                 </div>
 
                 <div class="field-block">

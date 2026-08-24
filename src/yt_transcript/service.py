@@ -14,12 +14,12 @@ from .renderers import (
     summary_source_text,
     truncated_summary_source,
 )
+from .summary_languages import normalize_summary_language
 from .youtube import download_and_parse_captions, extract_video_id, fetch_video_and_captions
 
 MAX_SUMMARY_LENGTH = 50_000
 ProgressCallback = Callable[[int, str], None]
 LongSummaryMode = Literal["ask", "truncate", "full", "skip"]
-ALLOWED_LANGUAGES = {"auto", "en", "ja"}
 ALLOWED_LONG_SUMMARY_MODES = {"ask", "truncate", "full", "skip"}
 ALLOWED_COOKIE_BROWSERS = {"chrome", "chromium", "edge", "firefox", "safari", "brave"}
 
@@ -39,15 +39,16 @@ class ExtractionOptions:
     def from_mapping(cls, value: Mapping[str, Any]) -> ExtractionOptions:
         url = str(value.get("url") or "").strip()
         transcript_format = str(value.get("transcript_format") or "md")
-        summary_language = str(value.get("summary_language") or "auto")
+        try:
+            summary_language = normalize_summary_language(value.get("summary_language", "auto"))
+        except ValueError as exc:
+            raise InvalidVideoError(str(exc)) from exc
         long_summary_mode = str(value.get("long_summary_mode") or "ask")
         cookie_browser = str(value.get("cookie_browser") or "").lower() or None
         gemini_model = str(value.get("gemini_model") or DEFAULT_GEMINI_MODEL).strip()
 
         if transcript_format not in SUPPORTED_OUTPUT_FORMATS:
             raise InvalidVideoError("The transcript output format is invalid.")
-        if summary_language not in ALLOWED_LANGUAGES:
-            raise InvalidVideoError("The summary language is invalid.")
         if long_summary_mode not in ALLOWED_LONG_SUMMARY_MODES:
             raise InvalidVideoError("The long transcript summary choice is invalid.")
         if cookie_browser and cookie_browser not in ALLOWED_COOKIE_BROWSERS:
@@ -199,8 +200,10 @@ def resolve_long_summary(
                 f"[{source_length:,}/{MAX_SUMMARY_LENGTH:,} characters]."
             ),
         )
-    if language not in ALLOWED_LANGUAGES:
-        raise InvalidVideoError("The summary language is invalid.")
+    try:
+        language = normalize_summary_language(language)
+    except ValueError as exc:
+        raise InvalidVideoError(str(exc)) from exc
     if not model.strip() or len(model.strip()) > 100:
         raise InvalidVideoError("The Gemini model ID is invalid.")
     key = api_key.strip() or os.getenv("GEMINI_API_KEY", "").strip()

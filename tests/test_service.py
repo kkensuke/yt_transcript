@@ -18,12 +18,24 @@ def test_options_validate_bridge_payload() -> None:
     )
     assert options.url == "dQw4w9WgXcQ"
     assert options.transcript_format == "json"
+    assert options.summary_language == "ja"
     assert options.cookie_browser == "safari"
 
     with pytest.raises(InvalidVideoError):
         ExtractionOptions.from_mapping({"url": "x", "transcript_format": "pdf"})
     with pytest.raises(InvalidVideoError):
         ExtractionOptions.from_mapping({"url": "x", "cookie_browser": "unknown"})
+
+
+def test_options_accept_common_and_custom_bcp47_summary_languages() -> None:
+    common = ExtractionOptions.from_mapping({"url": "x", "summary_language": "zh-hans"})
+    custom = ExtractionOptions.from_mapping({"url": "x", "summary_language": "it"})
+
+    assert common.summary_language == "zh-Hans"
+    assert custom.summary_language == "it"
+
+    with pytest.raises(InvalidVideoError, match="BCP 47"):
+        ExtractionOptions.from_mapping({"url": "x", "summary_language": "custom"})
 
 
 def test_service_returns_transcript_when_summary_fails(monkeypatch) -> None:

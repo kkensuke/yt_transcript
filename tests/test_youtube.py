@@ -150,6 +150,14 @@ def test_normalization_preserves_intentional_repeated_lines() -> None:
     assert _normalize_entries(repeated) == tuple(repeated)
 
 
+def test_normalization_preserves_caption_cues() -> None:
+    normalized = _normalize_entries(
+        [TranscriptSegment(0.0, 1.0, "[音楽] こ れ は テ ス ト です ♪")]
+    )
+
+    assert normalized[0].text == "[音楽] これはテストです ♪"
+
+
 def test_chapter_extraction_uses_source_chapters_and_infers_missing_ends() -> None:
     chapters = _extract_chapters(
         {

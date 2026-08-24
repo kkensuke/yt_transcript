@@ -47,22 +47,8 @@ def detect_language(
     return "ja" if visible_count and japanese_count / visible_count >= 0.12 else "en"
 
 
-def clean_japanese_text(text: str) -> str:
-    """Remove common caption noise and spaces between Japanese characters."""
-    for tag in (
-        "[音楽]",
-        "♪",
-        "♫",
-        "♬",
-        "♩",
-        "[拍手]",
-        "[笑い]",
-        "[笑]",
-        "[音響効果]",
-        "[効果音]",
-    ):
-        text = text.replace(tag, "")
-
+def normalize_caption_spacing(text: str) -> str:
+    """Normalize whitespace while preserving caption cues and spoken content."""
     japanese_range = r"\u3040-\u30ff\u3400-\u9fff"
     text = re.sub(rf"(?<=[{japanese_range}])\s+(?=[{japanese_range}])", "", text)
     return re.sub(r"\s+", " ", text).strip()

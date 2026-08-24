@@ -29,6 +29,7 @@ def test_ui_explains_each_setting_before_its_control() -> None:
     label_and_control_pairs = [
         ('for="videoUrl">YouTube video</label>', 'id="videoUrl"'),
         ('for="summaryLanguage">Summary language</label>', 'id="summaryLanguage"'),
+        ('for="customSummaryLanguage">Language tag</label>', 'id="customSummaryLanguage"'),
         ('for="geminiModel">Gemini Model ID</label>', 'id="geminiModel"'),
         ('id="apiKeyLabel"', 'id="apiKey"'),
         ('for="transcriptFormat">Transcript format</label>', 'id="transcriptFormat"'),
@@ -192,6 +193,17 @@ def test_ui_supports_zoom_shortcuts_and_model_discovery() -> None:
     assert "list_gemini_models" in html
 
 
+def test_ui_uses_shared_summary_languages_and_sends_custom_tags() -> None:
+    html = load_ui_html()
+
+    assert '<option value="auto">Same as transcript</option>' in html
+    assert 'id="customSummaryLanguage"' in html
+    assert 'otherOption.textContent = "Other…"' in html
+    assert "summary_language: selectedSummaryLanguage()" in html
+    assert "selectedSummaryLanguage()," in html
+    assert "BCP47_LANGUAGE_PATTERN" in html
+
+
 def test_ui_starts_from_system_theme_and_offers_only_light_dark_controls() -> None:
     html = load_ui_html()
 
@@ -217,6 +229,22 @@ def test_app_info_names_environment_sources_without_exposing_api_key(monkeypatch
     assert info["gemini_model"] == "gemini-test-model"
     assert info["gemini_model_source"] == "environment"
     assert info["gemini_model_environment_variable"] == "GEMINI_MODEL"
+    assert info["summary_languages"][0] == {
+        "code": "auto",
+        "label": "Same as transcript",
+    }
+    assert {item["code"] for item in info["summary_languages"]} >= {
+        "en",
+        "ja",
+        "zh-Hans",
+        "zh-Hant",
+        "ko",
+        "es",
+        "fr",
+        "de",
+        "pt-BR",
+        "hi",
+    }
     assert "super-secret-key" not in repr(info)
 
 
