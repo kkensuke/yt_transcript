@@ -12,6 +12,14 @@ def test_cli_accepts_gemini_model_override() -> None:
     assert args.gemini_model == "gemini-custom-model"
 
 
+def test_cli_reads_its_default_model_from_the_launch_environment(monkeypatch) -> None:
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-environment-model")
+
+    args = build_parser().parse_args(["dQw4w9WgXcQ"])
+
+    assert args.gemini_model == "gemini-environment-model"
+
+
 def test_cli_supports_output_directory() -> None:
     args = build_parser().parse_args(["dQw4w9WgXcQ", "--output-dir", "output"])
 

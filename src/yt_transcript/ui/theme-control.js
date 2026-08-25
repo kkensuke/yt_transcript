@@ -19,8 +19,8 @@
 
   function installThemeControl() {
     const header = document.querySelector(".app-header");
-    const bridgeStatus = document.getElementById("bridgeStatus");
-    if (!header || !bridgeStatus || document.getElementById("themeControl")) return;
+    const apiStatus = document.getElementById("apiStatus");
+    if (!header || !apiStatus || document.getElementById("themeControl")) return;
 
     const actions = document.createElement("div");
     actions.className = "header-actions";
@@ -42,12 +42,12 @@
       control.appendChild(button);
     }
 
-    header.insertBefore(actions, bridgeStatus);
-    actions.append(control, bridgeStatus);
+    header.insertBefore(actions, apiStatus);
+    actions.append(control, apiStatus);
     applyTheme(currentTheme);
   }
 
-  // Resolve the launch appearance once. Later macOS appearance changes do not
+  // Resolve the launch appearance once. Later system appearance changes do not
   // override an in-app Light/Dark choice during this app session.
   applyTheme(currentTheme);
 

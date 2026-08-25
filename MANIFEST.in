@@ -1,3 +1,2 @@
-include YouTubeTranscript.py
 include LICENSE
 recursive-include src/yt_transcript/ui *.html *.css *.js

@@ -41,10 +41,10 @@ def test_list_gemini_models_filters_generate_content_and_follows_pagination(monk
             ]
         },
     ]
-    requested_urls = []
+    requests = []
 
     def fake_urlopen(request, timeout):
-        requested_urls.append(request.full_url)
+        requests.append(request)
         assert timeout == 30
         return FakeResponse(responses.pop(0))
 
@@ -54,8 +54,35 @@ def test_list_gemini_models_filters_generate_content_and_follows_pagination(monk
         "gemini-flash-latest",
         "gemini-pro-latest",
     ]
-    assert "pageToken=page-2" in requested_urls[1]
-    assert "secret-key" in requested_urls[0]
+    assert "pageToken=page-2" in requests[1].full_url
+    assert all("secret-key" not in request.full_url for request in requests)
+    assert all(
+        {name.lower(): value for name, value in request.header_items()}["x-goog-api-key"]
+        == "secret-key"
+        for request in requests
+    )
+
+
+def test_generate_content_sends_key_only_in_google_header(monkeypatch) -> None:
+    requests = []
+
+    def fake_urlopen(request, timeout):
+        requests.append(request)
+        assert timeout == 120
+        return FakeResponse({"candidates": [{"content": {"parts": [{"text": "Summary body"}]}}]})
+
+    monkeypatch.setattr(gemini.urllib.request, "urlopen", fake_urlopen)
+
+    assert gemini.call_gemini_api("Transcript", "secret-key", model="gemini-test") == (
+        "Summary body"
+    )
+
+    request = requests[0]
+    headers = {name.lower(): value for name, value in request.header_items()}
+    assert request.full_url.endswith("/models/gemini-test:generateContent")
+    assert "secret-key" not in request.full_url
+    assert headers["x-goog-api-key"] == "secret-key"
+    assert b"secret-key" not in request.data
 
 
 def test_auto_prompt_asks_gemini_to_follow_the_transcript_language() -> None:

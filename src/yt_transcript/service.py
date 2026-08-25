@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import os
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, replace
 from typing import Any, Literal
 
-from .errors import AppError, GeminiApiError, InvalidVideoError
+from .errors import GeminiApiError, InvalidVideoError
 from .gemini import DEFAULT_GEMINI_MODEL, call_gemini_api, create_summary_markdown
 from .models import OutputArtifact, OutputFormat, SummaryLimit, TranscriptDocument
 from .renderers import (
@@ -101,6 +100,50 @@ def extract_transcript(
     progress: ProgressCallback | None = None,
 ) -> ExtractionResult:
     """Run extraction and summarize immediately unless a long input needs a decision."""
+    result = extract_transcript_only(options, progress=progress)
+    emit = progress or (lambda _percent, _message: None)
+
+    if not options.generate_summary:
+        return result
+
+    api_key = options.api_key.strip()
+    if not api_key:
+        emit(100, "Complete")
+        return replace(
+            result,
+            warning="No Gemini API key was provided, so only the transcript was created.",
+        )
+
+    is_long = result.character_count > MAX_SUMMARY_LENGTH
+    if is_long and options.long_summary_mode == "ask":
+        emit(100, "Transcript ready — choose how to summarize the long captions")
+        return mark_summary_pending(result)
+    if is_long and options.long_summary_mode == "skip":
+        return summarize_transcript(
+            result,
+            mode="skip",
+            api_key="",
+            language=options.summary_language,
+            model=options.gemini_model,
+            progress=progress,
+        )
+
+    summary_mode = "full" if options.long_summary_mode == "ask" else options.long_summary_mode
+    return summarize_transcript(
+        result,
+        mode=summary_mode,
+        api_key=api_key,
+        language=options.summary_language,
+        model=options.gemini_model,
+        progress=progress,
+    )
+
+
+def extract_transcript_only(
+    options: ExtractionOptions,
+    progress: ProgressCallback | None = None,
+) -> ExtractionResult:
+    """Extract and render captions without resolving or using any Gemini credential."""
     emit = progress or (lambda _percent, _message: None)
     emit(5, "Validating the URL…")
     if not extract_video_id(options.url):
@@ -129,47 +172,66 @@ def extract_transcript(
         word_count=len(source.split()),
     )
 
-    if not options.generate_summary:
-        emit(100, "Complete")
-        return result
+    emit(100, "Transcript ready")
+    return result
 
-    api_key = options.api_key or os.getenv("GEMINI_API_KEY", "").strip()
-    if not api_key:
-        emit(100, "Complete")
-        return replace(
-            result,
-            warning="No Gemini API key was provided, so only the transcript was created.",
-        )
 
-    is_long = len(source) > MAX_SUMMARY_LENGTH
-    if is_long and options.long_summary_mode == "ask":
-        emit(100, "Transcript ready — choose how to summarize the long captions")
-        return replace(
-            result,
-            summary_limit=SummaryLimit(
-                source_characters=len(source),
-                limit_characters=MAX_SUMMARY_LENGTH,
-                requires_confirmation=True,
-            ),
-        )
-    if is_long and options.long_summary_mode == "skip":
-        emit(100, "Complete")
-        return replace(
-            result,
-            summary_limit=SummaryLimit(len(source), MAX_SUMMARY_LENGTH, False),
-            warning=(
-                "Summary skipped because the captions exceed the default summary limit "
-                f"[{len(source):,}/{MAX_SUMMARY_LENGTH:,} characters]."
-            ),
-        )
+def mark_summary_pending(result: ExtractionResult) -> ExtractionResult:
+    """Mark a long extraction as awaiting the user's summary choice."""
+    return replace(
+        result,
+        summary_limit=SummaryLimit(
+            source_characters=result.character_count,
+            limit_characters=MAX_SUMMARY_LENGTH,
+            requires_confirmation=True,
+        ),
+    )
 
+
+def summarize_transcript(
+    result: ExtractionResult,
+    *,
+    mode: Literal["truncate", "full", "skip"],
+    api_key: str,
+    language: str,
+    model: str,
+    progress: ProgressCallback | None = None,
+) -> ExtractionResult:
+    """Summarize an existing extraction using only the explicitly supplied credential."""
+    if mode not in {"truncate", "full", "skip"}:
+        raise InvalidVideoError("The long transcript summary choice is invalid.")
+    try:
+        language = normalize_summary_language(language)
+    except ValueError as exc:
+        raise InvalidVideoError(str(exc)) from exc
+    model = model.strip()
+    if not model or len(model) > 100:
+        raise InvalidVideoError("The Gemini model ID is invalid.")
+
+    if mode == "skip":
+        emit = progress or (lambda _percent, _message: None)
+        emit(100, "Complete")
+        source_length = result.character_count
+        warning = "Summary skipped by the user."
+        summary_limit = None
+        if source_length > MAX_SUMMARY_LENGTH:
+            warning = (
+                "Summary skipped by the user for captions exceeding the default limit "
+                f"[{source_length:,}/{MAX_SUMMARY_LENGTH:,} characters]."
+            )
+            summary_limit = SummaryLimit(source_length, MAX_SUMMARY_LENGTH, False)
+        return replace(result, summary=None, summary_limit=summary_limit, warning=warning)
+
+    key = api_key.strip()
+    if not key:
+        raise GeminiApiError("No Gemini API key is configured.")
     return _summarize_result(
         result,
-        mode=options.long_summary_mode,
-        api_key=api_key,
-        language=options.summary_language,
-        model=options.gemini_model,
-        emit=emit,
+        mode=mode,
+        api_key=key,
+        language=language,
+        model=model,
+        emit=progress or (lambda _percent, _message: None),
     )
 
 
@@ -188,35 +250,13 @@ def resolve_long_summary(
     if mode not in {"truncate", "full", "skip"}:
         raise InvalidVideoError("The long transcript summary choice is invalid.")
 
-    emit = progress or (lambda _percent, _message: None)
-    source_length = result.summary_limit.source_characters
-    if mode == "skip":
-        emit(100, "Complete")
-        return replace(
-            result,
-            summary_limit=SummaryLimit(source_length, MAX_SUMMARY_LENGTH, False),
-            warning=(
-                "Summary skipped by the user for captions exceeding the default limit "
-                f"[{source_length:,}/{MAX_SUMMARY_LENGTH:,} characters]."
-            ),
-        )
-    try:
-        language = normalize_summary_language(language)
-    except ValueError as exc:
-        raise InvalidVideoError(str(exc)) from exc
-    if not model.strip() or len(model.strip()) > 100:
-        raise InvalidVideoError("The Gemini model ID is invalid.")
-    key = api_key.strip() or os.getenv("GEMINI_API_KEY", "").strip()
-    if not key:
-        raise GeminiApiError("No Gemini API key is configured.")
-
-    return _summarize_result(
+    return summarize_transcript(
         result,
         mode=mode,
-        api_key=key,
+        api_key=api_key,
         language=language,
-        model=model.strip(),
-        emit=emit,
+        model=model,
+        progress=progress,
     )
 
 
@@ -286,13 +326,3 @@ def _summarize_result(
         summary_limit=summary_limit,
         warning=warning,
     )
-
-
-def error_payload(error: Exception) -> dict[str, str]:
-    if isinstance(error, AppError):
-        return {"code": error.code, "message": error.message, "hint": error.hint}
-    return {
-        "code": "unexpected_error",
-        "message": "An unexpected error occurred.",
-        "hint": str(error),
-    }

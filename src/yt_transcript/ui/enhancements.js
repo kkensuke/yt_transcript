@@ -68,17 +68,38 @@
   tools.append(loadButton, status);
   modelSource.insertAdjacentElement("afterend", tools);
 
-  async function loadModels({ quiet = false } = {}) {
-    if (!window.pywebview || !window.pywebview.api) return;
+  async function loadModels() {
+    const apiKey = apiKeyInput.value.trim();
+    if (!apiKey) {
+      status.textContent = "Enter your Gemini API key first.";
+      apiKeyInput.focus();
+      return;
+    }
     loadButton.disabled = true;
-    if (!quiet) status.textContent = "Loading…";
+    status.textContent = "Loading…";
     try {
-      const response = await window.pywebview.api.list_gemini_models(apiKeyInput.value.trim());
-      if (!response || !response.ok) {
-        if (!quiet) status.textContent = (response && response.error) || "Could not load models.";
+      const response = await fetch("/api/gemini/models", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-Gemini-Api-Key": apiKey,
+        },
+        body: "{}",
+        cache: "no-store",
+        credentials: "omit",
+      });
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch (_error) {
+        // Use the generic message below for a non-JSON server response.
+      }
+      if (!response.ok) {
+        status.textContent = payload?.error?.message || "Could not load models.";
         return;
       }
-      const models = Array.isArray(response.models) ? response.models : [];
+      const models = Array.isArray(payload?.models) ? payload.models : [];
       datalist.replaceChildren(
         ...models.map((model) => {
           const option = document.createElement("option");
@@ -87,24 +108,12 @@
         }),
       );
       status.textContent = models.length ? `${models.length} models available` : "No models found";
-    } catch (error) {
-      if (!quiet) status.textContent = `Could not load models: ${String(error)}`;
+    } catch (_error) {
+      status.textContent = "Could not load models. Check your connection and try again.";
     } finally {
       loadButton.disabled = false;
     }
   }
 
   loadButton.addEventListener("click", () => loadModels());
-  window.addEventListener(
-    "pywebviewready",
-    async () => {
-      try {
-        const info = await window.pywebview.api.get_app_info();
-        if (info && info.api_key_configured) await loadModels({ quiet: true });
-      } catch (_error) {
-        // The main UI owns bridge error reporting.
-      }
-    },
-    { once: true },
-  );
 })();

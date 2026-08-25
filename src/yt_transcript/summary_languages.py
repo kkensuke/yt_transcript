@@ -62,7 +62,7 @@ def summary_language_prompt_name(language: str) -> str:
 
 
 def summary_language_options() -> list[dict[str, str]]:
-    """Return the shared language choices exposed by the desktop bridge."""
+    """Return the shared language choices exposed by the browser API."""
     return [
         {"code": AUTO_SUMMARY_LANGUAGE, "label": "Same as transcript"},
         *[{"code": option.code, "label": option.label} for option in COMMON_SUMMARY_LANGUAGES],

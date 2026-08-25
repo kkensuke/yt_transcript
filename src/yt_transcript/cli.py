@@ -19,6 +19,7 @@ def _summary_language_argument(value: str) -> str:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    default_gemini_model = os.getenv("GEMINI_MODEL", "").strip() or DEFAULT_GEMINI_MODEL
     parser = argparse.ArgumentParser(
         prog="yt-transcript",
         description="Extract original-language YouTube captions in multiple formats.",
@@ -67,8 +68,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--gemini-model",
-        default=DEFAULT_GEMINI_MODEL,
-        help=f"Gemini model ID (default: {DEFAULT_GEMINI_MODEL})",
+        default=default_gemini_model,
+        help=f"Gemini model ID (default: {default_gemini_model})",
     )
     parser.add_argument(
         "--list-gemini-models",

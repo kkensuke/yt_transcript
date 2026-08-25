@@ -6,7 +6,7 @@ from yt_transcript.models import CaptionTrack, TranscriptSegment, VideoMetadata
 from yt_transcript.service import ExtractionOptions
 
 
-def test_options_validate_bridge_payload() -> None:
+def test_options_validate_mapping_payload() -> None:
     options = ExtractionOptions.from_mapping(
         {
             "url": " dQw4w9WgXcQ ",
