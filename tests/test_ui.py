@@ -57,10 +57,38 @@ def test_ui_uses_byok_only_for_summary_requests() -> None:
     payload_start = script.index("const payload = {", script.index("async function handleSubmit"))
     payload_end = script.index("};", payload_start)
     assert "apiKey" not in script[payload_start:payload_end]
-    assert "GEMINI_API_KEY" not in all_ui
     assert "window.pywebview" not in all_ui
     assert "localStorage" not in all_ui
     assert "sessionStorage" not in all_ui
+
+
+def test_ui_distinguishes_missing_environment_and_entered_api_keys() -> None:
+    html = _asset("index.html")
+    script = _asset("app.js")
+    styles = _asset("styles.css")
+
+    assert 'id="apiKeySource"' in html
+    assert 'role="status"' in html
+    assert 'aria-live="polite"' in html
+    assert 'aria-atomic="true"' in html
+    for source_class in (
+        "config-source-missing",
+        "config-source-ready",
+        "config-source-entered",
+    ):
+        assert source_class in script
+        assert f".{source_class}" in styles
+    for message in (
+        "API key in use",
+        "API key needed",
+        "Gemini API key is not configured",
+        "Using environment variable GEMINI_API_KEY",
+        "Using the key entered in this tab",
+    ):
+        assert message in script
+    assert 'elements.apiKey.addEventListener("input", () =>' in script
+    assert "renderApiKeyStatus();" in script
+    assert "elements.apiKeySource.dataset.state" in script
 
 
 def test_ui_limits_api_key_lifetime_and_omits_browser_credentials() -> None:
@@ -72,6 +100,7 @@ def test_ui_limits_api_key_lifetime_and_omits_browser_credentials() -> None:
     assert api_key_input is not None
     assert 'type="password"' in api_key_input.group("attrs")
     assert 'autocomplete="off"' in api_key_input.group("attrs")
+    assert "value=" not in api_key_input.group("attrs")
     assert 'id="clearApiKeyButton"' in html
     assert 'window.addEventListener("pagehide"' in script
     assert "clearApiKey({ focus: false })" in script

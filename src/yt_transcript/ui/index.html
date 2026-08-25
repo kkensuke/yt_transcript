@@ -223,12 +223,17 @@
                 </div>
               </div>
 
-              <div class="config-source config-source-neutral" role="note">
-                <span class="config-source-label">Bring your own API key</span>
-                <strong>Your key is used only for Gemini requests</strong>
-                <p>
-                  It is sent to this server, forwarded to Google, and never saved by the app.
-                </p>
+              <div
+                id="apiKeySource"
+                class="config-source config-source-neutral"
+                data-state="checking"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                <span id="apiKeySourceLabel" class="config-source-label">API key status</span>
+                <strong id="apiKeySourceTitle">Checking configuration</strong>
+                <p id="apiKeySourceDescription">Checking whether an API key is available.</p>
               </div>
 
               <div class="field-block api-key-field">

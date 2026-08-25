@@ -643,6 +643,16 @@ select:disabled {
   color: var(--success);
 }
 
+.config-source-entered {
+  border-color: var(--primary);
+  border-left-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.config-source-entered strong {
+  color: var(--primary);
+}
+
 .config-source-missing {
   border-color: #d9bc69;
   border-left-color: var(--warning);
