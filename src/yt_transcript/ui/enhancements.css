@@ -5,13 +5,13 @@
 .model-tools {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 6px;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .model-load-button {
-  min-height: 32px;
-  padding-inline: 10px;
+  min-height: 44px;
+  padding-inline: 12px;
 }
 
 .model-list-status {
@@ -21,9 +21,9 @@
 
 .summary-limit-panel {
   display: grid;
-  gap: 12px;
-  margin-top: 14px;
-  padding: 13px;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 15px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--surface-muted);
@@ -51,14 +51,14 @@
 }
 
 .markdown-output.plain-output {
-  padding: 13px;
+  padding: 15px;
   overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface-muted);
   white-space: pre-wrap;
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.55;
 }
 
