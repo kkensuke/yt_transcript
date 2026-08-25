@@ -1,7 +1,7 @@
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .theme-control {
@@ -13,15 +13,15 @@
 }
 
 .theme-choice {
-  min-width: 58px;
-  min-height: 32px;
-  padding: 0 12px;
+  min-width: 50px;
+  min-height: 28px;
+  padding: 0 10px;
   border-radius: 999px;
   color: var(--text-muted);
   background: transparent;
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
 }
 
@@ -61,6 +61,7 @@
   --danger: #a61b1b;
   --danger-soft: #fff0f0;
   --shadow: 0 8px 24px rgba(22, 34, 47, 0.08);
+  --select-chevron: var(--select-chevron-light);
 }
 
 :root[data-theme="light"] input::placeholder {
@@ -75,7 +76,7 @@
 :root[data-theme="light"] input:disabled,
 :root[data-theme="light"] select:disabled {
   color: #536170;
-  background: #e8edf2;
+  background-color: #e8edf2;
 }
 
 :root[data-theme="light"] .button:disabled {
@@ -132,6 +133,7 @@
   --danger: #ff9898;
   --danger-soft: #421f24;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  --select-chevron: var(--select-chevron-dark);
 }
 
 :root[data-theme="dark"] input::placeholder {
@@ -146,7 +148,7 @@
 :root[data-theme="dark"] input:disabled,
 :root[data-theme="dark"] select:disabled {
   color: #8f9ba7;
-  background: #242e38;
+  background-color: #242e38;
 }
 
 :root[data-theme="dark"] .button:disabled,

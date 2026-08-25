@@ -4,46 +4,6 @@
   const colorScheme = document.querySelector('meta[name="color-scheme"]');
   if (colorScheme) colorScheme.setAttribute("content", "light dark");
 
-  const ZOOM_LEVELS = [0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
-  let zoomIndex = ZOOM_LEVELS.indexOf(1);
-  let zoomIndicatorTimer = null;
-
-  function showZoomIndicator() {
-    let indicator = document.getElementById("zoomIndicator");
-    if (!indicator) {
-      indicator = document.createElement("div");
-      indicator.id = "zoomIndicator";
-      indicator.className = "zoom-indicator";
-      indicator.setAttribute("role", "status");
-      indicator.setAttribute("aria-live", "polite");
-      document.body.appendChild(indicator);
-    }
-    indicator.textContent = `${Math.round(ZOOM_LEVELS[zoomIndex] * 100)}%`;
-    indicator.classList.add("visible");
-    window.clearTimeout(zoomIndicatorTimer);
-    zoomIndicatorTimer = window.setTimeout(() => indicator.classList.remove("visible"), 900);
-  }
-
-  function applyZoom(nextIndex) {
-    zoomIndex = Math.max(0, Math.min(ZOOM_LEVELS.length - 1, nextIndex));
-    document.documentElement.style.zoom = String(ZOOM_LEVELS[zoomIndex]);
-    showZoomIndicator();
-  }
-
-  document.addEventListener("keydown", (event) => {
-    if (!event.metaKey || event.ctrlKey || event.altKey) return;
-    if (event.key === "=" || event.key === "+") {
-      event.preventDefault();
-      applyZoom(zoomIndex + 1);
-    } else if (event.key === "-") {
-      event.preventDefault();
-      applyZoom(zoomIndex - 1);
-    } else if (event.key === "0") {
-      event.preventDefault();
-      applyZoom(ZOOM_LEVELS.indexOf(1));
-    }
-  });
-
   const modelInput = document.getElementById("geminiModel");
   const modelSource = document.getElementById("geminiModelSource");
   const apiKeyInput = document.getElementById("apiKey");

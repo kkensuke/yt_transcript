@@ -35,6 +35,8 @@ cd yt_transcript
 
 The launcher installs the optional Web dependencies, starts FastAPI on `127.0.0.1:8000`, and opens the system browser. It runs the current files directly from `src/`, so UI edits are not hidden by a stale installed copy.
 
+The Web UI does not override browser zoom shortcuts. Use the browser's standard zoom controls when a different scale is needed.
+
 Verify the local source and routes without starting the server:
 
 ```bash
@@ -108,6 +110,8 @@ uv run --extra web uvicorn yt_transcript.web:app \
 ```
 
 Do not set `GEMINI_API_KEY` for the Web service. The Web path intentionally ignores both `GEMINI_API_KEY` and `GEMINI_MODEL`; users supply their key in the UI, and the built-in model is the initial selection. Those environment variables remain CLI-only.
+
+`./scripts/run-app.sh` starts that same BYOK Web path, so it also ignores `GEMINI_API_KEY`. This keeps local testing behavior aligned with the public service. `API_KEY` is not a recognized variable. Use the CLI when environment-based `GEMINI_API_KEY` loading is desired.
 
 Use exactly one worker with the current in-memory Short-term Job Store. Multiple workers or replicas can route the summarize request away from the process that created its job. Scaling out requires a shared TTL store or verified session affinity while continuing to exclude credentials from stored job data.
 

@@ -94,6 +94,36 @@ def test_ui_supports_formats_summary_choices_downloads_and_model_discovery() -> 
     assert "/api/gemini/models" in enhancements
 
 
+def test_ui_uses_compact_css_and_leaves_zoom_to_the_browser() -> None:
+    script = _asset("enhancements.js")
+    styles = _asset("styles.css") + _asset("enhancements.css")
+
+    assert "ZOOM_LEVELS" not in script
+    assert "zoomIndicator" not in script
+    assert "event.preventDefault()" not in script
+    assert "zoom:" not in styles
+    assert ".zoom-indicator" not in styles
+    assert "width: min(760px, calc(100% - 36px));" in styles
+    assert "height: 40px;" in styles
+
+
+def test_ui_selects_have_an_inset_chevron() -> None:
+    styles = _asset("styles.css")
+
+    assert "appearance: none;" in styles
+    assert "padding-right: 42px;" in styles
+    assert "background-position: right 16px center;" in styles
+    assert "background-image: var(--select-chevron);" in styles
+
+
+def test_ui_links_to_google_ai_studio_for_new_api_keys() -> None:
+    html = _asset("index.html")
+
+    assert 'href="https://aistudio.google.com/api-keys"' in html
+    assert 'rel="noopener noreferrer"' in html
+    assert "Get an API key" in html
+
+
 def test_ui_uses_session_only_theme_controls() -> None:
     script = _asset("theme-control.js")
     styles = _asset("theme-control.css") + _asset("styles.css")
