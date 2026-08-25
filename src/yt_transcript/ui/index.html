@@ -4,8 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
+  <meta name="referrer" content="no-referrer">
   <title>YouTube Transcript</title>
-  <style>/*__APP_STYLES__*/</style>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/enhancements.css">
+  <link rel="stylesheet" href="/static/theme-control.css">
 </head>
 <body>
   <div class="app-shell">
@@ -23,7 +26,7 @@
           <p>Turn YouTube captions into readable, reusable files</p>
         </div>
       </div>
-      <div id="bridgeStatus" class="status-pill status-waiting" aria-live="polite">
+      <div id="apiStatus" class="status-pill status-waiting" aria-live="polite">
         <span class="status-dot"></span>
         <span>Starting</span>
       </div>
@@ -121,9 +124,12 @@
                     <option value="srt">SubRip subtitles (.srt)</option>
                     <option value="vtt">WebVTT subtitles (.vtt)</option>
                   </select>
+                  <p id="transcriptFormatHelp" class="field-description">
+                    Timestamps are always included; Markdown timestamps open the video.
+                  </p>
                 </div>
 
-                <div class="field-block">
+                <div id="cookieBrowserBlock" class="field-block">
                   <label class="field-label" for="cookieBrowser">Browser cookies</label>
                   <select id="cookieBrowser" aria-describedby="cookieBrowserHelp">
                     <option value="">None (recommended)</option>
@@ -168,7 +174,7 @@
               <div class="subsection-heading">
                 <h3 id="summarySettingsHeading">Summary settings</h3>
                 <p>
-                  Choose the language and model. Enter an API key only if one is not configured.
+                  Choose the language and model, then enter your own API key for this request.
                 </p>
               </div>
 
@@ -178,6 +184,9 @@
                   <select id="summaryLanguage" aria-describedby="summaryLanguageHelp">
                     <option value="auto">Same as transcript</option>
                   </select>
+                  <p id="summaryLanguageHelp" class="field-description">
+                    Choose a common language or enter another BCP 47 language tag.
+                  </p>
                   <div
                     id="customSummaryLanguageBlock"
                     class="custom-language-field hidden"
@@ -217,11 +226,11 @@
                 </div>
               </div>
 
-              <div id="apiKeySource" class="config-source config-source-neutral" role="status">
-                <span class="config-source-label">API key in use</span>
-                <strong id="apiKeySourceTitle">Checking configuration</strong>
-                <p id="apiKeySourceDescription">
-                  Checking whether GEMINI_API_KEY is available in the environment.
+              <div class="config-source config-source-neutral" role="note">
+                <span class="config-source-label">Bring your own API key</span>
+                <strong>Your key is used only for Gemini requests</strong>
+                <p>
+                  It is sent to this server, forwarded to Google, and never saved by the app.
                 </p>
               </div>
 
@@ -235,6 +244,7 @@
                     id="apiKey"
                     type="password"
                     autocomplete="off"
+                    autocapitalize="none"
                     spellcheck="false"
                     aria-describedby="apiKeyHelp apiKeyNote apiKeyError"
                     placeholder="Enter a Gemini API key"
@@ -246,10 +256,15 @@
                     aria-controls="apiKey"
                     aria-pressed="false"
                   >Show</button>
+                  <button
+                    id="clearApiKeyButton"
+                    class="button button-secondary input-action"
+                    type="button"
+                  >Clear</button>
                 </div>
                 <p id="apiKeyError" class="field-error hidden" role="alert"></p>
                 <p id="apiKeyNote" class="privacy-note">
-                  The value is discarded when you quit the app.
+                  The value stays only in this tab until you clear it, reload, or close the tab.
                 </p>
               </div>
             </section>
@@ -309,12 +324,17 @@
             <span class="section-label">Summary input</span>
             <h3 id="summaryLimitHeading">The captions exceed the default summary limit</h3>
             <p id="summaryLimitMessage"></p>
-            <p class="summary-limit-note">
+            <p id="summaryLimitNote" class="summary-limit-note">
               Sending the full transcript may exceed the selected model's context limit or fail.
             </p>
           </div>
           <div class="summary-limit-actions">
-            <button class="button button-primary-small" type="button" data-summary-mode="truncate">
+            <button
+              id="truncateSummaryButton"
+              class="button button-primary-small"
+              type="button"
+              data-summary-mode="truncate"
+            >
               Summarize first 50,000 characters
             </button>
             <button class="button button-secondary" type="button" data-summary-mode="full">
@@ -350,8 +370,8 @@
                 id="saveTranscriptButton"
                 class="button artifact-action"
                 type="button"
-                aria-label="Save transcript"
-              >Save</button>
+                aria-label="Download transcript"
+              >Download</button>
             </div>
           </div>
 
@@ -380,14 +400,14 @@
                 id="saveSummaryButton"
                 class="button artifact-action"
                 type="button"
-                aria-label="Save summary"
-              >Save</button>
+                aria-label="Download summary"
+              >Download</button>
             </div>
           </div>
 
           <div id="combinedResultActions" class="combined-result-actions hidden">
             <button id="saveBothButton" class="button button-primary-small" type="button">
-              Save both
+              Download both
             </button>
           </div>
         </div>
@@ -404,6 +424,8 @@
   </div>
 
   <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
-  <script>/*__APP_SCRIPT__*/</script>
+  <script src="/static/app.js" defer></script>
+  <script src="/static/enhancements.js" defer></script>
+  <script src="/static/theme-control.js" defer></script>
 </body>
 </html>

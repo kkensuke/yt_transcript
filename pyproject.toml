@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "yt-transcript"
-version = "0.2.0"
-description = "CLI and macOS desktop app for extracting YouTube transcripts"
+version = "0.3.0"
+description = "CLI and web app for extracting YouTube transcripts"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -15,19 +15,19 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-desktop = [
-    "pywebview>=6.2.1,<7",
+web = [
+    "fastapi>=0.116,<1",
+    "uvicorn>=0.35,<1",
 ]
 dev = [
+    "httpx2>=2,<3",
     "pytest>=8.4,<10",
     "ruff>=0.12,<1",
 ]
 
 [project.scripts]
 yt-transcript = "yt_transcript.cli:main"
-
-[project.gui-scripts]
-yt-transcript-app = "yt_transcript.desktop:main"
+yt-transcript-web = "yt_transcript.web:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

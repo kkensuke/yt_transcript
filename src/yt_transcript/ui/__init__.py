@@ -1,1 +1,1 @@
-"""Bundled desktop UI resources."""
+"""Bundled browser UI resources."""

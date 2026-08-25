@@ -19,22 +19,20 @@
     customSummaryLanguageBlock: document.getElementById("customSummaryLanguageBlock"),
     customSummaryLanguage: document.getElementById("customSummaryLanguage"),
     customSummaryLanguageError: document.getElementById("customSummaryLanguageError"),
+    cookieBrowserBlock: document.getElementById("cookieBrowserBlock"),
     cookieBrowser: document.getElementById("cookieBrowser"),
     apiKey: document.getElementById("apiKey"),
-    apiKeyLabel: document.getElementById("apiKeyLabel"),
     apiKeyNote: document.getElementById("apiKeyNote"),
     apiKeyError: document.getElementById("apiKeyError"),
-    apiKeySource: document.getElementById("apiKeySource"),
-    apiKeySourceTitle: document.getElementById("apiKeySourceTitle"),
-    apiKeySourceDescription: document.getElementById("apiKeySourceDescription"),
     apiKeyVisibilityButton: document.getElementById("apiKeyVisibilityButton"),
+    clearApiKeyButton: document.getElementById("clearApiKeyButton"),
     geminiModel: document.getElementById("geminiModel"),
     geminiModelSource: document.getElementById("geminiModelSource"),
     extractButton: document.getElementById("extractButton"),
     extractButtonLabel: document.querySelector("#extractButton .button-label"),
     runSummary: document.getElementById("runSummary"),
     submitHelp: document.getElementById("submitHelp"),
-    bridgeStatus: document.getElementById("bridgeStatus"),
+    apiStatus: document.getElementById("apiStatus"),
     versionLabel: document.getElementById("versionLabel"),
     progressPanel: document.getElementById("progressPanel"),
     progressMessage: document.getElementById("progressMessage"),
@@ -48,7 +46,10 @@
     resultMeta: document.getElementById("resultMeta"),
     warningBanner: document.getElementById("warningBanner"),
     summaryLimitPanel: document.getElementById("summaryLimitPanel"),
+    summaryLimitHeading: document.getElementById("summaryLimitHeading"),
     summaryLimitMessage: document.getElementById("summaryLimitMessage"),
+    summaryLimitNote: document.getElementById("summaryLimitNote"),
+    truncateSummaryButton: document.getElementById("truncateSummaryButton"),
     transcriptTab: document.getElementById("transcriptTab"),
     transcriptFormatBadge: document.getElementById("transcriptFormatBadge"),
     summaryActionGroup: document.getElementById("summaryActionGroup"),
@@ -65,18 +66,15 @@
   };
 
   const state = {
-    bridgeReady: false,
+    ready: false,
     busy: false,
     appInfo: {
-      api_key_configured: false,
-      api_key_source: "not_configured",
-      api_key_environment_variable: "GEMINI_API_KEY",
       gemini_model: "gemini-flash-lite-latest",
-      gemini_model_source: "default",
-      gemini_model_environment_variable: "GEMINI_MODEL",
       summary_languages: [{ code: "auto", label: "Same as transcript" }],
+      capabilities: { byok: true, server_api_key: false, browser_cookies: false },
     },
     result: null,
+    summaryJob: null,
     activeFormTab: "execute",
     activeTab: "transcript",
   };
@@ -90,7 +88,6 @@
     },
   };
 
-  window.addEventListener("pywebviewready", initializeBridge, { once: true });
   elements.form.addEventListener("submit", handleSubmit);
   elements.summary.addEventListener("change", syncSummaryOptions);
   elements.transcriptFormat.addEventListener("change", updateExecutionSummary);
@@ -109,6 +106,7 @@
   });
   elements.apiKey.addEventListener("input", clearApiKeyError);
   elements.apiKeyVisibilityButton.addEventListener("click", toggleApiKeyVisibility);
+  elements.clearApiKeyButton.addEventListener("click", clearApiKey);
   elements.copyTranscriptButton.addEventListener("click", () => copyResult("transcript"));
   elements.saveTranscriptButton.addEventListener("click", () =>
     saveResult("transcript", elements.saveTranscriptButton));
@@ -117,7 +115,6 @@
     saveResult("summary", elements.saveSummaryButton));
   elements.saveBothButton.addEventListener("click", saveBothResults);
   elements.openVideoButton.addEventListener("click", openCurrentVideo);
-  elements.markdownOutput.addEventListener("click", handleOutputLink);
   document.querySelectorAll("[data-summary-mode]").forEach((button) => {
     button.addEventListener("click", () => resolveLongSummary(button.dataset.summaryMode));
   });
@@ -131,28 +128,33 @@
   syncSummaryOptions();
   updateExecutionSummary();
   syncActionState();
+  initializeApi();
+  window.addEventListener("pagehide", () => {
+    discardPendingSummary();
+    clearApiKey({ focus: false });
+  });
 
-  async function initializeBridge() {
+  async function initializeApi() {
     try {
-      state.appInfo = await window.pywebview.api.get_app_info();
-      state.bridgeReady = true;
+      state.appInfo = await requestJson("/api/info");
+      state.ready = true;
       renderSummaryLanguages();
       elements.geminiModel.value = state.appInfo.gemini_model || "gemini-flash-lite-latest";
       elements.versionLabel.textContent = `v${state.appInfo.version || ""}`;
-      elements.bridgeStatus.className = "status-pill status-ready";
-      elements.bridgeStatus.innerHTML = '<span class="status-dot"></span><span>Ready</span>';
-      renderConfigurationSources();
+      elements.apiStatus.className = "status-pill status-ready";
+      elements.apiStatus.innerHTML = '<span class="status-dot"></span><span>Ready</span>';
+      renderWebConfiguration();
       updateExecutionSummary();
       syncActionState();
       elements.videoUrl.focus();
     } catch (error) {
-      elements.bridgeStatus.className = "status-pill status-error";
-      elements.bridgeStatus.innerHTML =
+      elements.apiStatus.className = "status-pill status-error";
+      elements.apiStatus.innerHTML =
         '<span class="status-dot"></span><span>Connection error</span>';
-      elements.submitHelp.textContent = "Restart the app.";
+      elements.submitHelp.textContent = "Reload this page.";
       showError({
-        message: "Could not connect to the app's Python process.",
-        hint: String(error),
+        message: "Could not connect to the application server.",
+        hint: error && error.message ? error.message : String(error),
       });
     }
   }
@@ -230,35 +232,15 @@
     return selected ? selected.text : "Same as transcript";
   }
 
-  function renderConfigurationSources() {
-    const apiKeyVariable = state.appInfo.api_key_environment_variable || "GEMINI_API_KEY";
-    const modelVariable = state.appInfo.gemini_model_environment_variable || "GEMINI_MODEL";
+  function renderWebConfiguration() {
     const model = state.appInfo.gemini_model || "gemini-flash-lite-latest";
-
-    elements.apiKeySource.className = state.appInfo.api_key_configured
-      ? "config-source config-source-ready"
-      : "config-source config-source-missing";
-
-    if (state.appInfo.api_key_configured) {
-      elements.apiKeySourceTitle.textContent = `Using environment variable ${apiKeyVariable}`;
-      elements.apiKeySourceDescription.textContent =
-        "The key is hidden. Enter another key below to override it for this run only.";
-      elements.apiKeyLabel.textContent = "Override with another Gemini API key (optional)";
-      elements.apiKey.placeholder = "Enter another API key only if needed";
-      elements.apiKeyNote.textContent =
-        `Leave this blank to use ${apiKeyVariable}. Entered values are never saved.`;
-    } else {
-      elements.apiKeySourceTitle.textContent = "Gemini API key is not configured";
-      elements.apiKeySourceDescription.textContent =
-        "To create a summary, enter a key issued by Google AI Studio below.";
-      elements.apiKeyLabel.textContent = "Gemini API key (required for summarization)";
-      elements.apiKey.placeholder = "Enter a Gemini API key";
-      elements.apiKeyNote.textContent = "The value is never saved and is used only for this run.";
-    }
-
-    elements.geminiModelSource.textContent = state.appInfo.gemini_model_source === "environment"
-      ? `Current setting: ${modelVariable} = ${model}`
-      : `Current setting: app default = ${model}`;
+    const browserCookies = Boolean(state.appInfo.capabilities?.browser_cookies);
+    elements.cookieBrowserBlock.classList.toggle("hidden", !browserCookies);
+    elements.cookieBrowser.disabled = !browserCookies;
+    if (!browserCookies) elements.cookieBrowser.value = "";
+    elements.apiKeyNote.textContent =
+      "Used only for the summary request in this tab; it is not saved by the app.";
+    elements.geminiModelSource.textContent = `Current setting: app default = ${model}`;
   }
 
   function updateExecutionSummary() {
@@ -281,9 +263,9 @@
 
   function syncActionState() {
     const hasUrl = Boolean(elements.videoUrl.value.trim());
-    elements.extractButton.disabled = state.busy || !state.bridgeReady || !hasUrl;
+    elements.extractButton.disabled = state.busy || !state.ready || !hasUrl;
 
-    if (!state.bridgeReady) {
+    if (!state.ready) {
       elements.submitHelp.textContent = "Preparing the app.";
     } else if (!hasUrl) {
       elements.submitHelp.textContent = "Enter a YouTube video to get started.";
@@ -308,6 +290,15 @@
     elements.apiKey.focus();
   }
 
+  function clearApiKey({ focus = true } = {}) {
+    elements.apiKey.value = "";
+    elements.apiKey.type = "password";
+    elements.apiKeyVisibilityButton.textContent = "Show";
+    elements.apiKeyVisibilityButton.setAttribute("aria-pressed", "false");
+    clearApiKeyError();
+    if (focus) elements.apiKey.focus();
+  }
+
   function switchFormTab(tab) {
     if (!["execute", "settings"].includes(tab) || state.busy) {
       return;
@@ -324,7 +315,7 @@
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (!state.bridgeReady || state.busy) {
+    if (!state.ready || state.busy) {
       return;
     }
 
@@ -340,14 +331,8 @@
       return;
     }
     clearApiKeyError();
-    if (
-      elements.summary.checked &&
-      !state.appInfo.api_key_configured &&
-      !elements.apiKey.value.trim()
-    ) {
-      setApiKeyError(
-        "Enter a Gemini API key or set the GEMINI_API_KEY environment variable.",
-      );
+    if (elements.summary.checked && !elements.apiKey.value.trim()) {
+      setApiKeyError("Enter your Gemini API key to create a summary.");
       switchFormTab("settings");
       elements.apiKey.focus();
       return;
@@ -368,27 +353,25 @@
     const payload = {
       url,
       transcript_format: elements.transcriptFormat.value,
-      generate_summary: elements.summary.checked,
-      summary_language: selectedSummaryLanguage(),
-      long_summary_mode: "ask",
-      cookie_browser: elements.cookieBrowser.value,
-      api_key: elements.apiKey.value.trim(),
-      gemini_model: elements.geminiModel.value.trim(),
+      prepare_summary: elements.summary.checked,
+      cookie_browser: elements.cookieBrowser.value || null,
     };
 
     try {
-      const response = await window.pywebview.api.extract(payload);
-      if (!response || !response.ok) {
-        showError(response && response.error ? response.error : {});
-        return;
-      }
+      await discardPendingSummary();
+      const response = await requestJson("/api/extract", { method: "POST", body: payload });
+      state.summaryJob = response.summary_job || null;
       renderResult(response.result);
-      showToast("Transcript complete.", "success");
+      if (state.summaryJob && !state.summaryJob.requires_long_summary_choice) {
+        window.App.onProgress({ percent: 72, message: "Generating the summary…" });
+        await requestSummary("full");
+      } else if (state.summaryJob) {
+        showToast("Transcript ready. Choose how to summarize the long captions.", "success");
+      } else {
+        showToast("Transcript complete.", "success");
+      }
     } catch (error) {
-      showError({
-        message: "Communication with the Python process failed.",
-        hint: error && error.message ? error.message : String(error),
-      });
+      showError(apiErrorFrom(error));
     } finally {
       elements.progressPanel.classList.add("hidden");
       setBusy(false);
@@ -416,6 +399,7 @@
       elements.cookieBrowser,
       elements.apiKey,
       elements.apiKeyVisibilityButton,
+      elements.clearApiKeyButton,
       elements.geminiModel,
     ].forEach((control) => {
       control.disabled = busy;
@@ -447,13 +431,35 @@
       .toUpperCase();
 
     const summaryLimit = result.summary_limit;
-    const needsSummaryChoice = Boolean(summaryLimit && summaryLimit.requires_confirmation);
+    const summaryFailed = Boolean(
+      state.summaryJob &&
+      !result.summary &&
+      String(result.warning || "").includes("summarization failed"),
+    );
+    const needsSummaryChoice = Boolean(
+      (summaryLimit && summaryLimit.requires_confirmation) || summaryFailed,
+    );
     elements.summaryLimitPanel.classList.toggle("hidden", !needsSummaryChoice);
     if (needsSummaryChoice) {
-      const source = Number(summaryLimit.source_characters || 0).toLocaleString();
-      const limit = Number(summaryLimit.limit_characters || 0).toLocaleString();
-      elements.summaryLimitMessage.textContent =
-        `Caption length: [${source} / ${limit} characters]. Choose how Gemini should summarize it.`;
+      const isLong = Number(result.character_count || 0) > Number(
+        summaryLimit?.limit_characters || 50_000,
+      );
+      elements.truncateSummaryButton.classList.toggle("hidden", !isLong);
+      if (isLong) {
+        const source = Number(summaryLimit.source_characters || 0).toLocaleString();
+        const limit = Number(summaryLimit.limit_characters || 0).toLocaleString();
+        elements.summaryLimitHeading.textContent = "The captions exceed the default summary limit";
+        elements.summaryLimitMessage.textContent =
+          `Caption length: [${source} / ${limit} characters]. Choose how Gemini should summarize it.`;
+        elements.summaryLimitNote.textContent =
+          "Sending the full transcript may exceed the selected model's context limit or fail.";
+      } else {
+        elements.summaryLimitHeading.textContent = "The summary could not be completed";
+        elements.summaryLimitMessage.textContent =
+          "Review the warning, enter your API key again, and retry the summary.";
+        elements.summaryLimitNote.textContent =
+          "The transcript remains available, and the pending job expires automatically.";
+      }
     }
     switchTab("transcript");
     elements.resultPanel.classList.remove("hidden");
@@ -486,11 +492,22 @@
   }
 
   async function resolveLongSummary(mode) {
-    if (!state.result || state.busy || !["truncate", "full", "skip"].includes(mode)) return;
+    if (
+      !state.result ||
+      !state.summaryJob ||
+      state.busy ||
+      !["truncate", "full", "skip"].includes(mode)
+    ) return;
     if (mode !== "skip" && !validateSummaryLanguage()) {
       switchFormTab("settings");
       elements.customSummaryLanguage.focus();
       showToast("Enter a valid summary language tag.", "error");
+      return;
+    }
+    if (mode !== "skip" && !elements.apiKey.value.trim()) {
+      setApiKeyError("Enter your Gemini API key to create a summary.");
+      switchFormTab("settings");
+      elements.apiKey.focus();
       return;
     }
     setBusy(true);
@@ -498,75 +515,83 @@
     elements.progressPanel.classList.remove("hidden");
     window.App.onProgress({ percent: 72, message: "Applying summary choice…" });
     try {
-      const response = await window.pywebview.api.summarize_latest(
-        mode,
-        elements.apiKey.value.trim(),
-        selectedSummaryLanguage(),
-        elements.geminiModel.value.trim(),
-      );
-      if (!response || !response.ok) {
-        showError(response && response.error ? response.error : {});
-        return;
-      }
-      renderResult(response.result);
-      if (response.result.summary) {
-        switchTab("summary");
-        showToast("Summary complete.", "success");
-      } else if (mode === "skip") {
-        showToast("Summary skipped.", "success");
-      } else {
-        showToast("Summary failed. Choose another option or review the warning.", "error");
-      }
+      await requestSummary(mode);
     } catch (error) {
-      showError({
-        message: "Communication with the Python process failed.",
-        hint: error && error.message ? error.message : String(error),
-      });
+      showError(apiErrorFrom(error));
     } finally {
       elements.progressPanel.classList.add("hidden");
       setBusy(false);
     }
   }
 
-  async function saveResult(kind, button) {
-    if (!getArtifact(kind)) return;
-    button.disabled = true;
-    try {
-      const response = await window.pywebview.api.save_result(kind);
-      if (!response.ok) {
-        showToast(response.error || "Could not save the file.", "error");
-      } else if (!response.cancelled) {
-        showToast(`Saved to: ${response.path}`, "success");
-      }
-    } catch (error) {
-      showToast(`Could not save the file: ${error}`, "error");
-    } finally {
-      button.disabled = false;
+  async function requestSummary(mode) {
+    if (!state.summaryJob) return;
+    const headers = {};
+    if (mode !== "skip") headers["X-Gemini-Api-Key"] = elements.apiKey.value.trim();
+    const pendingRequest = requestJson("/api/summarize", {
+      method: "POST",
+      headers,
+      body: {
+        job_id: state.summaryJob.id,
+        mode,
+        summary_language: selectedSummaryLanguage(),
+        gemini_model: elements.geminiModel.value.trim(),
+      },
+    });
+    clearApiKey({ focus: false });
+    const response = await pendingRequest;
+    state.summaryJob = response.summary_job || null;
+    renderResult(response.result);
+    if (response.result.summary) {
+      switchTab("summary");
+      showToast("Summary complete.", "success");
+    } else if (mode === "skip") {
+      showToast("Summary skipped.", "success");
+    } else {
+      showToast("Summary failed. Review the warning, enter the key, and retry.", "error");
     }
   }
 
-  async function saveBothResults() {
+  function saveResult(kind, button) {
+    const artifact = getArtifact(kind);
+    if (!artifact) return;
+    button.disabled = true;
+    downloadArtifact(artifact);
+    button.disabled = false;
+    showToast(`${kind === "summary" ? "Summary" : "Transcript"} download started.`, "success");
+  }
+
+  function saveBothResults() {
     if (!state.result || !state.result.summary) return;
     elements.saveBothButton.disabled = true;
-    try {
-      let response = await window.pywebview.api.save_all_results(false);
-      if (response && response.needs_overwrite_confirmation) {
-        const names = (response.conflicts || []).join("\n");
-        if (!window.confirm(`The following files already exist:\n\n${names}\n\nReplace them?`)) {
-          return;
-        }
-        response = await window.pywebview.api.save_all_results(true);
-      }
-      if (!response || !response.ok) {
-        showToast((response && response.error) || "Could not save the files.", "error");
-      } else if (!response.cancelled) {
-        showToast(`Saved ${response.paths.length} files.`, "success");
-      }
-    } catch (error) {
-      showToast(`Could not save the files: ${error}`, "error");
-    } finally {
+    downloadArtifact(state.result.transcript);
+    window.setTimeout(() => {
+      downloadArtifact(state.result.summary);
       elements.saveBothButton.disabled = false;
-    }
+    }, 150);
+    showToast("Two downloads started.", "success");
+  }
+
+  function downloadArtifact(artifact) {
+    const mimeTypes = {
+      json: "application/json;charset=utf-8",
+      md: "text/markdown;charset=utf-8",
+      srt: "application/x-subrip;charset=utf-8",
+      txt: "text/plain;charset=utf-8",
+      vtt: "text/vtt;charset=utf-8",
+    };
+    const blob = new Blob([artifact.content], {
+      type: mimeTypes[artifact.format] || "text/plain;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = artifact.filename;
+    link.hidden = true;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
   }
 
   function getArtifact(kind) {
@@ -594,25 +619,63 @@
     showToast(`${label} copied to the clipboard.`, "success");
   }
 
-  async function openCurrentVideo() {
+  function openCurrentVideo() {
+    if (!state.result?.video_url) return;
+    window.open(state.result.video_url, "_blank", "noopener,noreferrer");
+  }
+
+  async function requestJson(path, { method = "GET", headers = {}, body } = {}) {
+    const requestHeaders = { Accept: "application/json", ...headers };
+    const options = {
+      method,
+      headers: requestHeaders,
+      cache: "no-store",
+      credentials: "omit",
+    };
+    if (body !== undefined) {
+      requestHeaders["Content-Type"] = "application/json";
+      options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(path, options);
+    let payload = null;
     try {
-      const response = await window.pywebview.api.open_video();
-      if (!response.ok) showToast(response.error || "Could not open the video.", "error");
-    } catch (error) {
-      showToast(`Could not open the video: ${error}`, "error");
+      payload = await response.json();
+    } catch (_error) {
+      // A generic error below avoids reflecting server HTML into the page.
+    }
+    if (!response.ok) {
+      const error = new Error(payload?.error?.message || `Request failed (${response.status}).`);
+      error.apiError = payload?.error || null;
+      throw error;
+    }
+    return payload || {};
+  }
+
+  async function discardPendingSummary() {
+    const job = state.summaryJob;
+    state.summaryJob = null;
+    if (!job?.id) return;
+    try {
+      await fetch("/api/summary/discard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job_id: job.id }),
+        cache: "no-store",
+        credentials: "omit",
+        keepalive: true,
+      });
+    } catch (_error) {
+      // The server-side TTL is the fallback when a page closes or a request is interrupted.
     }
   }
 
-  async function handleOutputLink(event) {
-    const link = event.target.closest("[data-video-seconds]");
-    if (!link) return;
-    event.preventDefault();
-    try {
-      const response = await window.pywebview.api.open_video_at(link.dataset.videoSeconds);
-      if (!response.ok) showToast(response.error || "Could not open the timestamp.", "error");
-    } catch (error) {
-      showToast(`Could not open the timestamp: ${error}`, "error");
-    }
+  function apiErrorFrom(error) {
+    if (error?.apiError) return error.apiError;
+    return {
+      message: "Could not complete the request.",
+      hint: error?.message || "Check your connection, then try again.",
+    };
   }
 
   function showError(error) {
@@ -730,8 +793,7 @@
     try {
       const url = new URL(value);
       if (url.protocol !== "https:" || url.hostname !== "www.youtube.com") return escapeHtml(label);
-      const seconds = Math.max(0, Number.parseInt(url.searchParams.get("t") || "0", 10) || 0);
-      return `<a href="#" data-video-seconds="${seconds}">${escapeHtml(label)}</a>`;
+      return `<a href="${escapeHtml(url.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
     } catch (_error) {
       return escapeHtml(label);
     }
