@@ -94,7 +94,7 @@ def test_ui_supports_formats_summary_choices_downloads_and_model_discovery() -> 
     assert "/api/gemini/models" in enhancements
 
 
-def test_ui_uses_compact_css_and_leaves_zoom_to_the_browser() -> None:
+def test_ui_uses_standard_css_sizing_and_leaves_zoom_to_the_browser() -> None:
     script = _asset("enhancements.js")
     styles = _asset("styles.css") + _asset("enhancements.css")
 
@@ -103,15 +103,16 @@ def test_ui_uses_compact_css_and_leaves_zoom_to_the_browser() -> None:
     assert "event.preventDefault()" not in script
     assert "zoom:" not in styles
     assert ".zoom-indicator" not in styles
-    assert "width: min(760px, calc(100% - 36px));" in styles
-    assert "height: 40px;" in styles
+    assert "font-size: 16px;" in styles
+    assert "width: min(860px, calc(100% - 40px));" in styles
+    assert "height: 44px;" in styles
 
 
 def test_ui_selects_have_an_inset_chevron() -> None:
     styles = _asset("styles.css")
 
     assert "appearance: none;" in styles
-    assert "padding-right: 42px;" in styles
+    assert "padding-right: 44px;" in styles
     assert "background-position: right 16px center;" in styles
     assert "background-image: var(--select-chevron);" in styles
 
