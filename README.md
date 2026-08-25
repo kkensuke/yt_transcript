@@ -43,7 +43,7 @@ The Web app intentionally ignores `GEMINI_API_KEY` and `GEMINI_MODEL`, including
 
 Local mode can use cookies from a supported browser profile for videos that require sign-in. Try without cookies first. A hosted instance cannot access a visitor's browser profile.
 
-The Web UI leaves zoom controls to the browser. For self-hosting, see [Hosted deployment](docs/deployment.md).
+For self-hosting, see [Hosted deployment](docs/deployment.md).
 
 ## CLI
 
