@@ -51,7 +51,9 @@ def test_ui_uses_byok_only_for_summary_requests() -> None:
     assert "/api/extract" in script
     assert "/api/summarize" in script
     assert 'headers["X-Gemini-Api-Key"]' in script
-    assert '"X-Gemini-Api-Key": apiKey' in enhancements
+    assert 'headers["X-Gemini-Api-Key"] = apiKey' in enhancements
+    assert "hasServerApiKey" in script
+    assert "!apiKey && !serverApiKey" in enhancements
     payload_start = script.index("const payload = {", script.index("async function handleSubmit"))
     payload_end = script.index("};", payload_start)
     assert "apiKey" not in script[payload_start:payload_end]

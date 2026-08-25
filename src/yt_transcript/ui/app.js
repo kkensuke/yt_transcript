@@ -80,6 +80,9 @@
   };
 
   window.App = {
+    hasServerApiKey() {
+      return Boolean(state.appInfo.capabilities?.server_api_key);
+    },
     onProgress(payload) {
       const percent = Math.max(0, Math.min(100, Number(payload.percent) || 0));
       elements.progressMessage.textContent = payload.message || "Processing…";
@@ -235,11 +238,13 @@
   function renderWebConfiguration() {
     const model = state.appInfo.gemini_model || "gemini-flash-lite-latest";
     const browserCookies = Boolean(state.appInfo.capabilities?.browser_cookies);
+    const serverApiKey = window.App.hasServerApiKey();
     elements.cookieBrowserBlock.classList.toggle("hidden", !browserCookies);
     elements.cookieBrowser.disabled = !browserCookies;
     if (!browserCookies) elements.cookieBrowser.value = "";
-    elements.apiKeyNote.textContent =
-      "Used only for the summary request in this tab; it is not saved by the app.";
+    elements.apiKeyNote.textContent = serverApiKey
+      ? "Optional locally: leave blank to use the environment key, or enter a key for one request."
+      : "Used only for the summary request in this tab; it is not saved by the app.";
     elements.geminiModelSource.textContent = `Current setting: app default = ${model}`;
   }
 
@@ -331,7 +336,11 @@
       return;
     }
     clearApiKeyError();
-    if (elements.summary.checked && !elements.apiKey.value.trim()) {
+    if (
+      elements.summary.checked &&
+      !elements.apiKey.value.trim() &&
+      !window.App.hasServerApiKey()
+    ) {
       setApiKeyError("Enter your Gemini API key to create a summary.");
       switchFormTab("settings");
       elements.apiKey.focus();
@@ -504,7 +513,11 @@
       showToast("Enter a valid summary language tag.", "error");
       return;
     }
-    if (mode !== "skip" && !elements.apiKey.value.trim()) {
+    if (
+      mode !== "skip" &&
+      !elements.apiKey.value.trim() &&
+      !window.App.hasServerApiKey()
+    ) {
       setApiKeyError("Enter your Gemini API key to create a summary.");
       switchFormTab("settings");
       elements.apiKey.focus();
@@ -527,7 +540,8 @@
   async function requestSummary(mode) {
     if (!state.summaryJob) return;
     const headers = {};
-    if (mode !== "skip") headers["X-Gemini-Api-Key"] = elements.apiKey.value.trim();
+    const apiKey = elements.apiKey.value.trim();
+    if (mode !== "skip" && apiKey) headers["X-Gemini-Api-Key"] = apiKey;
     const pendingRequest = requestJson("/api/summarize", {
       method: "POST",
       headers,

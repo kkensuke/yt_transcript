@@ -21,11 +21,13 @@ uv run --extra web uvicorn yt_transcript.web:app \
 
 Terminate TLS at a trusted reverse proxy or hosting platform and forward requests to the application. `GET /healthz` returns a small process-health response suitable for a health check.
 
-## Bring-your-own-key behavior
+## Gemini configuration
 
-Do not configure `GEMINI_API_KEY` or `GEMINI_MODEL` for the Web service. The Web path intentionally ignores both variables; each user enters a key in the UI, and the built-in model is the initial selection.
+Do not configure `GEMINI_API_KEY` or `GEMINI_MODEL` for a hosted Web service. Hosted mode intentionally ignores both variables; each user enters a key in the UI, and the built-in model is the initial selection.
 
-`./scripts/run-app.sh` starts the same Web path in local mode, so it also ignores those variables. The CLI is the only interface that reads environment-based Gemini configuration. `API_KEY` is not a recognized variable.
+`./scripts/run-app.sh` starts local mode. In that mode, loopback requests may use `GEMINI_API_KEY` when the UI field is empty, and `GEMINI_MODEL` becomes the initial model. A key entered in the UI takes precedence. The server reports only whether a fallback key is available; it never returns the key itself to the browser. Environment changes take effect after restarting the app.
+
+`API_KEY` is not a recognized variable.
 
 ## Environment variables
 
@@ -41,6 +43,8 @@ Do not configure `GEMINI_API_KEY` or `GEMINI_MODEL` for the Web service. The Web
 | `YT_TRANSCRIPT_MAX_JOBS` | `64` | Maximum pending summary jobs per process |
 | `YT_TRANSCRIPT_MAX_PENDING_CHARACTERS` | `5000000` | Total pending caption characters per process |
 | `YT_TRANSCRIPT_MAX_WORKERS` | `4` | Maximum concurrent blocking extraction and Gemini operations |
+| `GEMINI_API_KEY` | Unset | Local loopback fallback for summaries and model discovery; ignored in hosted mode |
+| `GEMINI_MODEL` | `gemini-flash-lite-latest` | Initial local model; ignored in hosted mode |
 
 Every configured numeric limit must be a positive integer. In hosted mode, omit wildcard hosts and use exact public origins.
 

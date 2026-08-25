@@ -52,16 +52,20 @@ def test_project_entry_points_use_clean_python_package_name() -> None:
 
 def test_readme_documents_cli_web_and_byok_configuration() -> None:
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    contributing = (PROJECT_ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+    deployment = (PROJECT_ROOT / "docs" / "deployment.md").read_text(encoding="utf-8")
+    architecture = (PROJECT_ROOT / "docs" / "architecture.md").read_text(encoding="utf-8")
+    security = (PROJECT_ROOT / "SECURITY.md").read_text(encoding="utf-8")
 
     assert "./scripts/run-app.sh" in readme
-    assert "./scripts/run-app.sh --check" in readme
+    assert "./scripts/run-app.sh --check" in contributing
     assert "--gemini-model" in readme
     assert "--output-dir" in readme
     assert "GEMINI_MODEL" in readme
     assert "Load available models" in readme
-    assert "YT_TRANSCRIPT_MODE=hosted" in readme
-    assert "X-Gemini-Api-Key" in readme
-    assert "Short-term Job Store" in readme
-    assert "one worker" in readme.lower()
+    assert "YT_TRANSCRIPT_MODE=hosted" in deployment
+    assert "X-Gemini-Api-Key" in architecture
+    assert "Short-term Job Store" in architecture
+    assert "one application worker" in (deployment + security).lower()
     assert "open dist/YouTubeTranscript.app" not in readme
     assert "pywebview" not in readme.lower()
