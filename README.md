@@ -25,6 +25,8 @@ cd yt_transcript
 
 ## Browser app
 
+![Screenshot of the browser app](docs/screenshot.png)
+
 Start the local browser app:
 
 ```bash
