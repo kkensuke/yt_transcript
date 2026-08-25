@@ -22,8 +22,13 @@
     cookieBrowserBlock: document.getElementById("cookieBrowserBlock"),
     cookieBrowser: document.getElementById("cookieBrowser"),
     apiKey: document.getElementById("apiKey"),
+    apiKeyLabel: document.getElementById("apiKeyLabel"),
     apiKeyNote: document.getElementById("apiKeyNote"),
     apiKeyError: document.getElementById("apiKeyError"),
+    apiKeySource: document.getElementById("apiKeySource"),
+    apiKeySourceLabel: document.getElementById("apiKeySourceLabel"),
+    apiKeySourceTitle: document.getElementById("apiKeySourceTitle"),
+    apiKeySourceDescription: document.getElementById("apiKeySourceDescription"),
     apiKeyVisibilityButton: document.getElementById("apiKeyVisibilityButton"),
     clearApiKeyButton: document.getElementById("clearApiKeyButton"),
     geminiModel: document.getElementById("geminiModel"),
@@ -107,7 +112,10 @@
     clearUrlError();
     syncActionState();
   });
-  elements.apiKey.addEventListener("input", clearApiKeyError);
+  elements.apiKey.addEventListener("input", () => {
+    clearApiKeyError();
+    renderApiKeyStatus();
+  });
   elements.apiKeyVisibilityButton.addEventListener("click", toggleApiKeyVisibility);
   elements.clearApiKeyButton.addEventListener("click", clearApiKey);
   elements.copyTranscriptButton.addEventListener("click", () => copyResult("transcript"));
@@ -238,14 +246,54 @@
   function renderWebConfiguration() {
     const model = state.appInfo.gemini_model || "gemini-flash-lite-latest";
     const browserCookies = Boolean(state.appInfo.capabilities?.browser_cookies);
-    const serverApiKey = window.App.hasServerApiKey();
     elements.cookieBrowserBlock.classList.toggle("hidden", !browserCookies);
     elements.cookieBrowser.disabled = !browserCookies;
     if (!browserCookies) elements.cookieBrowser.value = "";
-    elements.apiKeyNote.textContent = serverApiKey
-      ? "Optional locally: leave blank to use the environment key, or enter a key for one request."
-      : "Used only for the summary request in this tab; it is not saved by the app.";
+    renderApiKeyStatus();
     elements.geminiModelSource.textContent = `Current setting: app default = ${model}`;
+  }
+
+  function renderApiKeyStatus() {
+    const serverApiKey = window.App.hasServerApiKey();
+    const enteredApiKey = Boolean(elements.apiKey.value.trim());
+    const source = enteredApiKey ? "entered" : serverApiKey ? "environment" : "missing";
+    const stateSignature = `${source}:${serverApiKey}`;
+    if (elements.apiKeySource.dataset.state === stateSignature) return;
+    elements.apiKeySource.dataset.state = stateSignature;
+
+    if (source === "entered") {
+      elements.apiKeySource.className = "config-source config-source-entered";
+      elements.apiKeySourceLabel.textContent = "API key in use";
+      elements.apiKeySourceTitle.textContent = "Using the key entered in this tab";
+      elements.apiKeySourceDescription.textContent = serverApiKey
+        ? "This key overrides the local environment key for Gemini requests. It is never saved."
+        : "This key will be used only for Gemini requests. It is never saved.";
+    } else if (source === "environment") {
+      elements.apiKeySource.className = "config-source config-source-ready";
+      elements.apiKeySourceLabel.textContent = "API key in use";
+      elements.apiKeySourceTitle.textContent =
+        "Using environment variable GEMINI_API_KEY";
+      elements.apiKeySourceDescription.textContent =
+        "The key stays on this local server. Enter another key below to override it in this tab.";
+    } else {
+      elements.apiKeySource.className = "config-source config-source-missing";
+      elements.apiKeySourceLabel.textContent = "API key needed";
+      elements.apiKeySourceTitle.textContent = "Gemini API key is not configured";
+      elements.apiKeySourceDescription.textContent =
+        "Enter a key below to create summaries and load available models.";
+    }
+
+    if (serverApiKey) {
+      elements.apiKeyLabel.textContent = "Override with another Gemini API key (optional)";
+      elements.apiKey.placeholder = "Enter another API key only if needed";
+      elements.apiKeyNote.textContent =
+        "Leave this blank to use the environment key. Entered values are never saved.";
+    } else {
+      elements.apiKeyLabel.textContent = "Gemini API key (required for summarization)";
+      elements.apiKey.placeholder = "Enter a Gemini API key";
+      elements.apiKeyNote.textContent =
+        "The entered value stays only in this tab until you clear it, submit a summary, reload, or close the tab.";
+    }
   }
 
   function updateExecutionSummary() {
@@ -301,6 +349,7 @@
     elements.apiKeyVisibilityButton.textContent = "Show";
     elements.apiKeyVisibilityButton.setAttribute("aria-pressed", "false");
     clearApiKeyError();
+    renderApiKeyStatus();
     if (focus) elements.apiKey.focus();
   }
 
