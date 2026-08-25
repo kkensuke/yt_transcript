@@ -1,6 +1,7 @@
 import json
 from dataclasses import replace
 
+import pytest
 from fastapi.testclient import TestClient
 
 from yt_transcript import web
@@ -13,6 +14,12 @@ from yt_transcript.models import (
 )
 from yt_transcript.service import ExtractionResult
 from yt_transcript.web_state import PendingSummaryStore
+
+
+@pytest.fixture(autouse=True)
+def _clear_gemini_environment(monkeypatch) -> None:
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
 
 
 def _result(*, character_count: int = 6) -> ExtractionResult:
@@ -59,10 +66,15 @@ def _extract_job(client: TestClient) -> str:
     return response.json()["summary_job"]["id"]
 
 
-def test_info_and_static_ui_do_not_expose_server_credentials(monkeypatch) -> None:
+def test_local_info_reports_environment_configuration_without_exposing_the_key(
+    monkeypatch,
+) -> None:
     monkeypatch.setenv("GEMINI_API_KEY", "environment-secret")
     monkeypatch.setenv("GEMINI_MODEL", "environment-model")
-    client = TestClient(web.create_app(mode="local"))
+    client = TestClient(
+        web.create_app(mode="local"),
+        client=("127.0.0.1", 50_000),
+    )
 
     info = client.get("/api/info")
     index = client.get("/")
@@ -70,12 +82,34 @@ def test_info_and_static_ui_do_not_expose_server_credentials(monkeypatch) -> Non
     assert info.status_code == 200
     assert info.json()["capabilities"] == {
         "byok": True,
-        "server_api_key": False,
+        "server_api_key": True,
         "browser_cookies": True,
     }
-    assert info.json()["gemini_model"] == web.DEFAULT_GEMINI_MODEL
+    assert info.json()["gemini_model"] == "environment-model"
     assert "environment-secret" not in info.text + index.text
-    assert "environment-model" not in info.text + index.text
+
+
+def test_hosted_info_and_model_discovery_ignore_environment_configuration(monkeypatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "operator-secret")
+    monkeypatch.setenv("GEMINI_MODEL", "operator-model")
+    client = TestClient(
+        web.create_app(
+            mode="hosted",
+            allowed_hosts=["testserver"],
+            allowed_origins={"https://transcript.example"},
+        ),
+        client=("127.0.0.1", 50_000),
+    )
+
+    info = client.get("/api/info")
+    models = client.post("/api/gemini/models", json={})
+
+    assert info.json()["capabilities"]["server_api_key"] is False
+    assert info.json()["gemini_model"] == web.DEFAULT_GEMINI_MODEL
+    assert models.status_code == 400
+    assert models.json()["error"]["code"] == "missing_api_key"
+    assert "operator-secret" not in info.text + models.text
+    assert "operator-model" not in info.text + models.text
 
 
 def test_extract_never_accepts_or_forwards_an_api_key(monkeypatch) -> None:
@@ -108,7 +142,60 @@ def test_extract_never_accepts_or_forwards_an_api_key(monkeypatch) -> None:
     assert secret not in repr(store._jobs)
 
 
-def test_summary_requires_the_user_header_and_deletes_completed_job(monkeypatch) -> None:
+def test_local_summary_uses_environment_key_and_prefers_the_user_header(monkeypatch) -> None:
+    environment_secret = "local-environment-key"
+    monkeypatch.setenv("GEMINI_API_KEY", environment_secret)
+    monkeypatch.setattr(web, "extract_transcript_only", lambda _options: _result())
+    observed = []
+
+    def summarize(result, **kwargs):
+        observed.append(kwargs)
+        return _summary(result)
+
+    monkeypatch.setattr(web, "summarize_transcript", summarize)
+    store = PendingSummaryStore()
+    client = TestClient(
+        web.create_app(mode="local", store=store),
+        client=("127.0.0.1", 50_000),
+    )
+    payload = {
+        "job_id": _extract_job(client),
+        "mode": "full",
+        "summary_language": "ja",
+        "gemini_model": "gemini-test",
+    }
+
+    environment_response = client.post("/api/summarize", json=payload)
+    payload["job_id"] = _extract_job(client)
+    user_secret = "user-secret-key"
+    header_response = client.post(
+        "/api/summarize",
+        json=payload,
+        headers={web.API_KEY_HEADER: user_secret},
+    )
+
+    assert environment_response.status_code == 200
+    assert header_response.status_code == 200
+    assert observed == [
+        {
+            "mode": "full",
+            "api_key": environment_secret,
+            "language": "ja",
+            "model": "gemini-test",
+        },
+        {
+            "mode": "full",
+            "api_key": user_secret,
+            "language": "ja",
+            "model": "gemini-test",
+        },
+    ]
+    assert environment_secret not in environment_response.text + header_response.text
+    assert user_secret not in environment_response.text + header_response.text
+    assert len(store) == 0
+
+
+def test_hosted_summary_requires_the_user_header_and_deletes_completed_job(monkeypatch) -> None:
     monkeypatch.setenv("GEMINI_API_KEY", "operator-key-must-be-ignored")
     monkeypatch.setattr(web, "extract_transcript_only", lambda _options: _result())
     observed = []
@@ -119,7 +206,14 @@ def test_summary_requires_the_user_header_and_deletes_completed_job(monkeypatch)
 
     monkeypatch.setattr(web, "summarize_transcript", summarize)
     store = PendingSummaryStore()
-    client = TestClient(web.create_app(mode="local", store=store))
+    client = TestClient(
+        web.create_app(
+            mode="hosted",
+            store=store,
+            allowed_hosts=["testserver"],
+            allowed_origins={"https://transcript.example"},
+        )
+    )
     job_id = _extract_job(client)
     secret = "user-secret-key"
     payload = {
@@ -226,17 +320,22 @@ def test_summary_can_be_skipped_without_a_key(monkeypatch) -> None:
     assert len(store) == 0
 
 
-def test_model_discovery_uses_only_the_explicit_header(monkeypatch) -> None:
+def test_local_model_discovery_uses_environment_key_and_prefers_the_header(monkeypatch) -> None:
+    environment_secret = "local-model-list-key"
+    monkeypatch.setenv("GEMINI_API_KEY", environment_secret)
     observed = []
     monkeypatch.setattr(
         web,
         "fetch_gemini_models",
         lambda key: observed.append(key) or ["gemini-flash-latest"],
     )
-    client = TestClient(web.create_app(mode="local"))
+    client = TestClient(
+        web.create_app(mode="local"),
+        client=("127.0.0.1", 50_000),
+    )
     secret = "model-list-key"
 
-    missing = client.post("/api/gemini/models", json={})
+    environment_response = client.post("/api/gemini/models", json={})
     oversized_key = "s" * 513
     rejected = client.post(
         "/api/gemini/models",
@@ -249,12 +348,45 @@ def test_model_discovery_uses_only_the_explicit_header(monkeypatch) -> None:
         headers={web.API_KEY_HEADER: secret},
     )
 
-    assert missing.status_code == 400
+    assert environment_response.json() == {"ok": True, "models": ["gemini-flash-latest"]}
     assert rejected.status_code == 422
     assert oversized_key not in rejected.text
     assert response.json() == {"ok": True, "models": ["gemini-flash-latest"]}
-    assert observed == [secret]
-    assert secret not in response.text
+    assert observed == [environment_secret, secret]
+    assert environment_secret not in environment_response.text + response.text
+    assert secret not in environment_response.text + response.text
+
+
+def test_local_environment_key_is_unavailable_to_non_loopback_clients(monkeypatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "local-only-secret")
+    monkeypatch.setenv("GEMINI_MODEL", "local-only-model")
+    monkeypatch.setattr(web, "extract_transcript_only", lambda _options: _result())
+    client = TestClient(
+        web.create_app(mode="local"),
+        client=("192.0.2.10", 50_000),
+    )
+    job_id = _extract_job(client)
+
+    info = client.get("/api/info")
+    summary = client.post(
+        "/api/summarize",
+        json={
+            "job_id": job_id,
+            "mode": "full",
+            "summary_language": "auto",
+            "gemini_model": "gemini-test",
+        },
+    )
+    models = client.post("/api/gemini/models", json={})
+
+    assert info.json()["capabilities"]["server_api_key"] is False
+    assert info.json()["gemini_model"] == web.DEFAULT_GEMINI_MODEL
+    assert summary.status_code == 400
+    assert summary.json()["error"]["code"] == "missing_api_key"
+    assert models.status_code == 400
+    assert models.json()["error"]["code"] == "missing_api_key"
+    assert "local-only-secret" not in info.text + summary.text + models.text
+    assert "local-only-model" not in info.text + summary.text + models.text
 
 
 def test_hosted_mode_disables_browser_cookie_access(monkeypatch) -> None:

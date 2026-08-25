@@ -30,7 +30,8 @@
 
   async function loadModels() {
     const apiKey = apiKeyInput.value.trim();
-    if (!apiKey) {
+    const serverApiKey = Boolean(window.App?.hasServerApiKey?.());
+    if (!apiKey && !serverApiKey) {
       status.textContent = "Enter your Gemini API key first.";
       apiKeyInput.focus();
       return;
@@ -38,13 +39,14 @@
     loadButton.disabled = true;
     status.textContent = "Loading…";
     try {
+      const headers = {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      };
+      if (apiKey) headers["X-Gemini-Api-Key"] = apiKey;
       const response = await fetch("/api/gemini/models", {
         method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "X-Gemini-Api-Key": apiKey,
-        },
+        headers,
         body: "{}",
         cache: "no-store",
         credentials: "omit",

@@ -39,7 +39,15 @@ Paste a YouTube URL or video ID, adjust the transcript and summary settings if n
 
 The key is needed only for Gemini summaries and model discovery. The browser sends it to the app for that operation, and the app forwards it to Google without placing it in a URL or saving it. The summary flow clears the input after sending it; clearing, reloading, or closing the tab also removes it.
 
-The Web app intentionally ignores `GEMINI_API_KEY` and `GEMINI_MODEL`, including when started with `./scripts/run-app.sh`. Enter the key in the UI. Environment-based Gemini configuration is available only in the CLI.
+When `./scripts/run-app.sh` serves the app locally, it can use `GEMINI_API_KEY` as a fallback and `GEMINI_MODEL` as the initial model. The key remains in the server process and is never returned to the browser; a key entered in the UI overrides it for that request.
+
+```bash
+export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+export GEMINI_MODEL="gemini-flash-lite-latest"  # Optional
+./scripts/run-app.sh
+```
+
+The fallback is available only to loopback requests in local mode. Hosted mode always ignores both variables and requires each user to enter a key. `API_KEY` is not a recognized variable.
 
 Local mode can use cookies from a supported browser profile for videos that require sign-in. Try without cookies first. A hosted instance cannot access a visitor's browser profile.
 

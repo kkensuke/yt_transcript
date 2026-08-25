@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 import logging
 import os
 import threading
@@ -148,6 +149,7 @@ def create_app(
     allowed_origins: set[str] | None = None,
 ) -> FastAPI:
     web_mode = mode or _configured_mode()
+    local_api_key, local_gemini_model = _local_gemini_configuration(web_mode)
     hosts = allowed_hosts or _configured_hosts(web_mode)
     origins = (
         allowed_origins if allowed_origins is not None else _configured_origins(web_mode, hosts)
@@ -272,15 +274,16 @@ def create_app(
         return {"status": "ok"}
 
     @application.get("/api/info")
-    def app_info() -> dict[str, object]:
+    def app_info(request: Request) -> dict[str, object]:
+        local_configuration = _may_use_local_gemini_configuration(request, web_mode)
         return {
             "version": __version__,
-            "gemini_model": DEFAULT_GEMINI_MODEL,
+            "gemini_model": local_gemini_model if local_configuration else DEFAULT_GEMINI_MODEL,
             "summary_languages": summary_language_options(),
             "summary_limit_characters": MAX_SUMMARY_LENGTH,
             "capabilities": {
                 "byok": True,
-                "server_api_key": False,
+                "server_api_key": bool(local_api_key) and local_configuration,
                 "browser_cookies": web_mode == "local",
             },
         }
@@ -325,6 +328,7 @@ def create_app(
 
     @application.post("/api/summarize")
     def summarize(
+        request: Request,
         payload: SummarizeRequest,
         api_key: Annotated[
             SecretStr | None,
@@ -336,6 +340,12 @@ def create_app(
             key = ""
             if payload.mode != "skip":
                 key = api_key.get_secret_value().strip() if api_key else ""
+                if (
+                    not key
+                    and local_api_key
+                    and _may_use_local_gemini_configuration(request, web_mode)
+                ):
+                    key = local_api_key.get_secret_value()
                 if not key:
                     raise WebApiError(
                         400,
@@ -372,12 +382,15 @@ def create_app(
 
     @application.post("/api/gemini/models")
     def gemini_models(
+        request: Request,
         api_key: Annotated[
             SecretStr | None,
             Header(alias=API_KEY_HEADER, max_length=512),
         ] = None,
     ) -> dict[str, object]:
         key = api_key.get_secret_value().strip() if api_key else ""
+        if not key and local_api_key and _may_use_local_gemini_configuration(request, web_mode):
+            key = local_api_key.get_secret_value()
         if not key:
             raise WebApiError(
                 400,
@@ -471,6 +484,37 @@ def _configured_mode() -> Literal["local", "hosted"]:
     if value not in {"local", "hosted"}:
         raise RuntimeError("YT_TRANSCRIPT_MODE must be either local or hosted.")
     return value  # type: ignore[return-value]
+
+
+def _local_gemini_configuration(
+    mode: Literal["local", "hosted"],
+) -> tuple[SecretStr | None, str]:
+    if mode != "local":
+        return None, DEFAULT_GEMINI_MODEL
+
+    key = os.getenv("GEMINI_API_KEY", "").strip()
+    model = os.getenv("GEMINI_MODEL", "").strip() or DEFAULT_GEMINI_MODEL
+    if len(key) > 512:
+        raise RuntimeError("GEMINI_API_KEY must not exceed 512 characters.")
+    if len(model) > 100:
+        raise RuntimeError("GEMINI_MODEL must not exceed 100 characters.")
+    return (SecretStr(key) if key else None), model
+
+
+def _may_use_local_gemini_configuration(
+    request: Request,
+    mode: Literal["local", "hosted"],
+) -> bool:
+    if mode != "local" or request.client is None:
+        return False
+    try:
+        address = ipaddress.ip_address(request.client.host)
+    except ValueError:
+        return False
+    if address.is_loopback:
+        return True
+    mapped_address = getattr(address, "ipv4_mapped", None)
+    return bool(mapped_address and mapped_address.is_loopback)
 
 
 def _configured_hosts(mode: Literal["local", "hosted"]) -> list[str]:
