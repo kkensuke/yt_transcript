@@ -5,13 +5,13 @@
 .model-tools {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 6px;
 }
 
 .model-load-button {
-  min-height: 36px;
-  padding-inline: 12px;
+  min-height: 32px;
+  padding-inline: 10px;
 }
 
 .model-list-status {
@@ -19,35 +19,11 @@
   font-size: 12px;
 }
 
-.zoom-indicator {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 1000;
-  padding: 7px 11px;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  color: var(--text);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  font-size: 12px;
-  font-weight: 800;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(4px);
-  transition: opacity 120ms ease, transform 120ms ease;
-}
-
-.zoom-indicator.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 .summary-limit-panel {
   display: grid;
-  gap: 16px;
-  margin-top: 18px;
-  padding: 16px;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 13px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--surface-muted);
@@ -75,7 +51,7 @@
 }
 
 .markdown-output.plain-output {
-  padding: 16px;
+  padding: 13px;
   overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -108,6 +84,7 @@
     --danger: #ff9898;
     --danger-soft: #421f24;
     --shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+    --select-chevron: var(--select-chevron-dark);
   }
 
   input::placeholder {
@@ -122,7 +99,7 @@
   input:disabled,
   select:disabled {
     color: #8f9ba7;
-    background: #242e38;
+    background-color: #242e38;
   }
 
   .button:disabled,
