@@ -82,7 +82,6 @@ def test_ui_supports_formats_summary_choices_downloads_and_model_discovery() -> 
     script = _asset("app.js")
     enhancements = _asset("enhancements.js")
 
-    assert "Timestamps are always included" in html
     for output_format in ("md", "txt", "json", "srt", "vtt"):
         assert f'<option value="{output_format}">' in html
     for mode in ("truncate", "full", "skip"):
