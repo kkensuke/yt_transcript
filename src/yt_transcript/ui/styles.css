@@ -303,7 +303,8 @@ main {
 .external-help-link {
   margin-left: 4px;
   white-space: nowrap;
-  font-weight: 700;
+  color: var(--primary);
+  font-weight: 500;
 }
 
 .field-block {
