@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import ipaddress
 import logging
 import os
@@ -147,12 +148,15 @@ def create_app(
     store: PendingSummaryStore | None = None,
     allowed_hosts: list[str] | None = None,
     allowed_origins: set[str] | None = None,
+    port: int | None = None,
 ) -> FastAPI:
     web_mode = mode or _configured_mode()
     local_api_key, local_gemini_model = _local_gemini_configuration(web_mode)
     hosts = allowed_hosts or _configured_hosts(web_mode)
     origins = (
-        allowed_origins if allowed_origins is not None else _configured_origins(web_mode, hosts)
+        allowed_origins
+        if allowed_origins is not None
+        else _configured_origins(web_mode, hosts, port=port)
     )
     summary_store = (
         store
@@ -530,7 +534,12 @@ def _configured_hosts(mode: Literal["local", "hosted"]) -> list[str]:
     return ["127.0.0.1", "localhost", "testserver"]
 
 
-def _configured_origins(mode: Literal["local", "hosted"], hosts: list[str]) -> set[str]:
+def _configured_origins(
+    mode: Literal["local", "hosted"],
+    hosts: list[str],
+    *,
+    port: int | None = None,
+) -> set[str]:
     configured = {
         value.strip().rstrip("/")
         for value in os.getenv("YT_TRANSCRIPT_ALLOWED_ORIGINS", "").split(",")
@@ -540,10 +549,10 @@ def _configured_origins(mode: Literal["local", "hosted"], hosts: list[str]) -> s
         return configured
     if mode == "hosted":
         return {f"https://{host}" for host in hosts if host != "*"}
-    port = _positive_int_env("PORT", 8000)
+    local_port = port if port is not None else _positive_int_env("PORT", 8000)
     return {
-        f"http://127.0.0.1:{port}",
-        f"http://localhost:{port}",
+        f"http://127.0.0.1:{local_port}",
+        f"http://localhost:{local_port}",
         "http://testserver",
     }
 
@@ -559,17 +568,57 @@ def _positive_int_env(name: str, default: int) -> int:
     return value
 
 
-def main() -> None:
+def _positive_port(value: str) -> int:
+    try:
+        port = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("port must be a positive integer") from error
+    if port <= 0 or port > 65_535:
+        raise argparse.ArgumentTypeError("port must be between 1 and 65535")
+    return port
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="yt-transcript web",
+        description="Start the local YouTube Transcript browser app.",
+    )
+    parser.add_argument(
+        "--port",
+        type=_positive_port,
+        default=_positive_int_env("PORT", 8000),
+        help="Listening port (default: PORT or 8000)",
+    )
+    parser.add_argument(
+        "--no-open",
+        action="store_true",
+        help="Start the server without opening the default browser",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
     import uvicorn
 
+    args = build_parser().parse_args(argv)
     mode = _configured_mode()
-    port = _positive_int_env("PORT", 8000)
+    port = args.port
     host = os.getenv("YT_TRANSCRIPT_HOST", "").strip() or (
         "127.0.0.1" if mode == "local" else "0.0.0.0"
     )
-    if mode == "local" and os.getenv("YT_TRANSCRIPT_OPEN_BROWSER", "1") != "0":
-        threading.Timer(0.8, lambda: webbrowser.open(f"http://127.0.0.1:{port}")).start()
-    uvicorn.run(app, host=host, port=port, workers=1)
+    browser_url = f"http://127.0.0.1:{port}"
+    application = create_app(mode=mode, port=port)
+    should_open = (
+        mode == "local" and not args.no_open and os.getenv("YT_TRANSCRIPT_OPEN_BROWSER", "1") != "0"
+    )
+    if should_open:
+        timer = threading.Timer(0.8, lambda: webbrowser.open(browser_url))
+        timer.daemon = True
+        timer.start()
+
+    print(f"YouTube Transcript is running at:\n{browser_url}\n\nPress Ctrl+C to stop.", flush=True)
+    uvicorn.run(application, host=host, port=port, workers=1)
+    return 0
 
 
 app = create_app()

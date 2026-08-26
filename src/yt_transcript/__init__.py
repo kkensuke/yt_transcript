@@ -1,3 +1,3 @@
 """YouTube transcript extraction for browser and command-line use."""
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"

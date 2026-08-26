@@ -12,15 +12,27 @@ YouTube Transcript provides a browser app and CLI that turn original-language Yo
 - Use local browser cookies for restricted videos when running on the same computer
 - Keep the CLI for scripts and batch-friendly file output
 
-## Requirements and installation
+## Installation
 
-- Python 3.11–3.13
-- [uv](https://docs.astral.sh/uv/)
-- A personal [Gemini API key](https://aistudio.google.com/api-keys) for summaries and model discovery
+### Homebrew
+
+Homebrew installs the CLI and browser app together without requiring a separately managed Python environment:
+
+```bash
+brew install kkensuke/tap/yt-transcript
+yt-transcript --version
+```
+
+A personal [Gemini API key](https://aistudio.google.com/api-keys) is optional and is used only for summaries and model discovery. Caption extraction does not require one.
+
+### From source
+
+Source development requires Python 3.11–3.14 and [uv](https://docs.astral.sh/uv/):
 
 ```bash
 git clone https://github.com/kkensuke/yt_transcript.git
 cd yt_transcript
+uv sync --all-extras
 ```
 
 ## Browser app
@@ -30,10 +42,17 @@ cd yt_transcript
 Start the local browser app:
 
 ```bash
-./scripts/run-app.sh
+yt-transcript web
 ```
 
-The launcher installs the Web dependencies, starts the app on `127.0.0.1:8000`, and opens the system browser.
+It starts the app on `127.0.0.1:8000` and opens the default browser. Use a different port or suppress browser opening when needed:
+
+```bash
+yt-transcript web --port 8080
+yt-transcript web --no-open
+```
+
+From a source checkout, prefix installed commands with `uv run`, or use `./scripts/run-app.sh` to prepare the Web dependencies and launch the current source tree.
 
 Paste a YouTube URL or video ID, adjust the transcript and summary settings if needed, and run the extraction. Completed transcripts and summaries can be previewed, copied, or downloaded from the browser.
 
@@ -41,12 +60,12 @@ Paste a YouTube URL or video ID, adjust the transcript and summary settings if n
 
 The key is needed only for Gemini summaries and model discovery. The browser sends it to the app for that operation, and the app forwards it to Google without placing it in a URL or saving it. The summary flow clears the input after sending it; clearing, reloading, or closing the tab also removes it.
 
-When `./scripts/run-app.sh` serves the app locally, it can use `GEMINI_API_KEY` as a fallback and `GEMINI_MODEL` as the initial model. The key remains in the server process and is never returned to the browser; a key entered in the UI overrides it for that request.
+When the app runs locally, it can use `GEMINI_API_KEY` as a fallback and `GEMINI_MODEL` as the initial model. The key remains in the server process and is never returned to the browser; a key entered in the UI overrides it for that request.
 
 ```bash
 export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
 export GEMINI_MODEL="gemini-flash-lite-latest"  # Optional
-./scripts/run-app.sh
+yt-transcript web
 ```
 
 The fallback is available only to loopback requests in local mode. Hosted mode always ignores both variables and requires each user to enter a key. `API_KEY` is not a recognized variable.
@@ -62,28 +81,30 @@ The CLI reads `GEMINI_API_KEY` and optional `GEMINI_MODEL` from its environment.
 ```bash
 # Transcript and summary
 export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-uv run yt-transcript "https://www.youtube.com/watch?v=VIDEO_ID"
+yt-transcript "https://www.youtube.com/watch?v=VIDEO_ID"
 
 # Transcript only
-uv run yt-transcript "VIDEO_ID" --no-summary
+yt-transcript "VIDEO_ID" --no-summary
 
 # WebVTT transcript
-uv run yt-transcript "VIDEO_ID" --format vtt --no-summary
+yt-transcript "VIDEO_ID" --format vtt --no-summary
 
 # Use local Chrome cookies for a restricted video
-uv run yt-transcript "VIDEO_ID" --cookies-from-browser chrome
+yt-transcript "VIDEO_ID" --cookies-from-browser chrome
 
 # Select a model and summary language
-uv run yt-transcript "VIDEO_ID" \
+yt-transcript "VIDEO_ID" \
   --gemini-model "gemini-flash-latest" \
   --summary-lang fr
 
 # List models available to the environment key
-uv run yt-transcript --list-gemini-models
+yt-transcript --list-gemini-models
 
 # Write results to another directory
-uv run yt-transcript "VIDEO_ID" --output-dir output/
+yt-transcript "VIDEO_ID" --output-dir output/
 ```
+
+When running these examples from a source checkout, use `uv run yt-transcript ...`.
 
 ### CLI options
 
@@ -98,6 +119,7 @@ uv run yt-transcript "VIDEO_ID" --output-dir output/
 | `--cookies-from-browser BROWSER` | Use local `chrome`, `chromium`, `edge`, `firefox`, `safari`, or `brave` cookies |
 | `--gemini-model MODEL_ID` | Select the Gemini model |
 | `--list-gemini-models` | List models supporting `generateContent` |
+| `--version` | Print the installed application version |
 
 The CLI selects the model in this order: `--gemini-model`, `GEMINI_MODEL`, then the built-in `gemini-flash-lite-latest`. If its key is missing or summarization fails, the transcript is still written and a warning is shown.
 
@@ -107,7 +129,8 @@ The CLI selects the model in this order: `--gemini-model`, `GEMINI_MODEL`, then 
 
 - Confirm that the video has manual or auto-generated captions.
 - Confirm that YouTube exposes an original-language caption track.
-- Update `yt-dlp`: `uv lock --upgrade-package yt-dlp && uv sync`.
+- Homebrew users should run `brew update && brew upgrade yt-transcript`.
+- Source users can update `yt-dlp` with `uv lock --upgrade-package yt-dlp && uv sync`.
 
 ### `HTTP 429` appears
 
@@ -124,6 +147,7 @@ YouTube is temporarily rate-limiting requests. Wait and retry. Local users can t
 
 - [Architecture](docs/architecture.md) — request flow, internal HTTP boundary, and short-term job store
 - [Hosted deployment](docs/deployment.md) — server setup, environment variables, and process model
+- [Homebrew releases](docs/homebrew.md) — Tap architecture, one-time setup, and release process
 - [Security](SECURITY.md) — credential handling, deployment checklist, and vulnerability reporting
 - [Contributing](CONTRIBUTING.md) — development setup, verification, and project structure
 

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from yt_transcript import cli
+from yt_transcript import __version__, cli, web
 from yt_transcript.cli import build_parser
 
 
@@ -78,6 +78,22 @@ def test_cli_model_listing_reports_a_missing_api_key(monkeypatch, capsys) -> Non
     assert "No Gemini API key is configured" in captured.err
 
 
+def test_cli_dispatches_the_web_subcommand_without_parsing_it_as_a_url(monkeypatch) -> None:
+    observed = []
+    monkeypatch.setattr(web, "main", lambda argv: observed.append(argv) or 0)
+
+    assert cli.main(["web", "--no-open", "--port", "8123"]) == 0
+    assert observed == [["--no-open", "--port", "8123"]]
+
+
+def test_cli_reports_the_package_version(capsys) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main(["--version"])
+
+    assert exit_info.value.code == 0
+    assert capsys.readouterr().out.strip() == f"yt-transcript {__version__}"
+
+
 def test_cli_help_lists_all_extended_options() -> None:
     help_text = build_parser().format_help()
 
@@ -87,5 +103,6 @@ def test_cli_help_lists_all_extended_options() -> None:
     assert "--format" in help_text
     assert "--long-summary" in help_text
     assert "--cookies-from-browser" in help_text
+    assert "yt-transcript web --help" in help_text
     assert "--caption-lang" not in help_text
     assert "--no-timestamps" not in help_text

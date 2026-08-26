@@ -509,3 +509,51 @@ def test_expired_summary_job_returns_gone(monkeypatch) -> None:
     assert response.status_code == 410
     assert response.json()["error"]["code"] == "summary_job_expired"
     assert "ephemeral-key" not in response.text
+
+
+def test_web_parser_supports_headless_mode_and_custom_port() -> None:
+    args = web.build_parser().parse_args(["--no-open", "--port", "8123"])
+
+    assert args.no_open is True
+    assert args.port == 8123
+
+
+@pytest.mark.parametrize("value", ["0", "65536", "not-a-port"])
+def test_web_parser_rejects_invalid_ports(value: str) -> None:
+    with pytest.raises(SystemExit):
+        web.build_parser().parse_args(["--port", value])
+
+
+def test_web_main_starts_the_requested_port_without_opening_a_browser(monkeypatch, capsys) -> None:
+    import uvicorn
+
+    observed = {}
+    application = object()
+
+    def create_application(**kwargs):
+        observed["create_app"] = kwargs
+        return application
+
+    monkeypatch.setattr(web, "create_app", create_application)
+    monkeypatch.setattr(
+        uvicorn,
+        "run",
+        lambda app, **kwargs: observed.update({"app": app, "uvicorn": kwargs}),
+    )
+    monkeypatch.setattr(
+        web.webbrowser,
+        "open",
+        lambda _url: (_ for _ in ()).throw(AssertionError("browser should not open")),
+    )
+
+    assert web.main(["--no-open", "--port", "8123"]) == 0
+    assert observed == {
+        "create_app": {"mode": "local", "port": 8123},
+        "app": application,
+        "uvicorn": {"host": "127.0.0.1", "port": 8123, "workers": 1},
+    }
+    assert "http://127.0.0.1:8123" in capsys.readouterr().out
+
+
+def test_custom_web_port_is_included_in_the_local_origin_allowlist() -> None:
+    assert "http://127.0.0.1:8123" in web._configured_origins("local", ["127.0.0.1"], port=8123)

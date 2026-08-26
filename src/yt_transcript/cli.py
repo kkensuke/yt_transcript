@@ -5,10 +5,14 @@ import os
 import sys
 from pathlib import Path
 
+from . import __version__
 from .errors import AppError
 from .gemini import DEFAULT_GEMINI_MODEL, list_gemini_models
 from .service import ExtractionOptions, extract_transcript
 from .summary_languages import COMMON_SUMMARY_LANGUAGES, normalize_summary_language
+
+WEB_COMMAND = "web"
+WEB_DEPENDENCIES = frozenset({"fastapi", "pydantic", "starlette", "uvicorn"})
 
 
 def _summary_language_argument(value: str) -> str:
@@ -23,11 +27,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="yt-transcript",
         description="Extract original-language YouTube captions in multiple formats.",
+        epilog="Run 'yt-transcript web --help' to start the local browser app.",
     )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument(
         "url",
         nargs="?",
-        help="YouTube URL or 11-character video ID",
+        help="YouTube URL or 11-character video ID; use 'web' to start the browser app",
     )
     parser.add_argument(
         "--output-dir",
@@ -80,8 +86,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    if arguments and arguments[0] == WEB_COMMAND:
+        return _run_web(arguments[1:])
+
     parser = build_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(arguments)
 
     if args.list_gemini_models:
         try:
@@ -129,6 +139,18 @@ def main(argv: list[str] | None = None) -> int:
     if result.warning:
         print(f"Note: {result.warning}", file=sys.stderr)
     return 0
+
+
+def _run_web(argv: list[str]) -> int:
+    try:
+        from .web import main as web_main
+    except ModuleNotFoundError as exc:
+        if exc.name not in WEB_DEPENDENCIES:
+            raise
+        print("Error: The browser app dependencies are not installed.", file=sys.stderr)
+        print("Hint: Install the project with its 'web' extra and try again.", file=sys.stderr)
+        return 2
+    return web_main(argv)
 
 
 def _print_app_error(error: AppError) -> None:
