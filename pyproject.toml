@@ -28,7 +28,6 @@ dev = [
 
 [project.scripts]
 yt-transcript = "yt_transcript.cli:main"
-yt-transcript-web = "yt_transcript.web:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

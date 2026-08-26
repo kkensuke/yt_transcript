@@ -50,8 +50,7 @@ def test_project_entry_points_use_clean_python_package_name() -> None:
     config = tomllib.loads(PROJECT_CONFIG.read_text(encoding="utf-8"))
 
     scripts = config["project"]["scripts"]
-    assert scripts["yt-transcript"] == "yt_transcript.cli:main"
-    assert scripts["yt-transcript-web"] == "yt_transcript.web:main"
+    assert scripts == {"yt-transcript": "yt_transcript.cli:main"}
     assert "gui-scripts" not in config["project"]
     assert "yt_transcript.ui" in config["tool"]["setuptools"]["package-data"]
 
@@ -99,6 +98,7 @@ def test_homebrew_formula_is_rendered_from_runtime_and_web_dependencies(tmp_path
     formula = output.read_text(encoding="utf-8")
     assert "class YtTranscript < Formula" in formula
     assert f"refs/tags/v{__version__}.tar.gz" in formula
+    assert 'head "https://github.com/' not in formula
     assert 'depends_on "python@3.14"' in formula
     assert 'depends_on "pydantic" => :no_linkage' in formula
     assert 'resource "fastapi"' in formula

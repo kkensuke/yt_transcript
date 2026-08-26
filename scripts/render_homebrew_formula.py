@@ -164,7 +164,6 @@ def render_formula(*, version: str, source_sha256: str) -> str:
         f'  url "https://github.com/{REPOSITORY}/archive/refs/tags/v{version}.tar.gz"',
         f'  sha256 "{source_sha256.lower()}"',
         '  license "MIT"',
-        f'  head "https://github.com/{REPOSITORY}.git", branch: "main"',
         "",
         '  depends_on "pydantic" => :no_linkage',
         '  depends_on "python@3.14"',

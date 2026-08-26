@@ -66,7 +66,6 @@ Additional repository paths:
 - Python package: `yt_transcript`
 - CLI command: `yt-transcript`
 - Browser app command: `yt-transcript web`
-- Direct browser server entry point: `yt-transcript-web` (kept for compatibility and hosting)
 
 ## Releases
 

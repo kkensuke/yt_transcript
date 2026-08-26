@@ -36,7 +36,7 @@ Do not configure `GEMINI_API_KEY` or `GEMINI_MODEL` for a hosted Web service. Ho
 | `YT_TRANSCRIPT_MODE` | `local` | Select `local` or `hosted` capabilities and defaults |
 | `YT_TRANSCRIPT_ALLOWED_HOSTS` | Local hosts | Comma-separated Host allowlist; required in hosted mode |
 | `YT_TRANSCRIPT_ALLOWED_ORIGINS` | Derived locally | Comma-separated Origin allowlist for state-changing API calls |
-| `YT_TRANSCRIPT_HOST` | Mode-dependent | Host used by `yt-transcript web`, `yt-transcript-web`, and `run-app.sh` |
+| `YT_TRANSCRIPT_HOST` | Mode-dependent | Host used by `yt-transcript web` and `run-app.sh` |
 | `PORT` | `8000` | Listening port and local allowed-origin port |
 | `YT_TRANSCRIPT_OPEN_BROWSER` | `1` locally | Set to `0` to suppress automatic browser opening |
 | `YT_TRANSCRIPT_JOB_TTL` | `600` | Pending summary lifetime in seconds |

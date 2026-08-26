@@ -11,7 +11,7 @@ Users install both the CLI and browser app with one command:
 brew install kkensuke/tap/yt-transcript
 ```
 
-The installed commands are `yt-transcript`, `yt-transcript web`, and the compatibility entry point `yt-transcript-web`.
+The installed command is `yt-transcript`; use its `web` subcommand to start the browser app.
 
 ## Packaging design
 
