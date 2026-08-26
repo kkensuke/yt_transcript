@@ -121,16 +121,19 @@ When running these examples from a source checkout, add the `uv run` prefix show
 
 | Option | Description |
 |---|---|
-| `url` | YouTube URL or 11-character video ID; omitted with `--list-gemini-models` |
-| `--output-dir DIR` | Directory for transcript and summary files |
-| `--format {md,txt,json,srt,vtt}` | Transcript format; defaults to `md` |
-| `--no-summary` | Skip Gemini summarization |
-| `--summary-lang LANGUAGE` | `auto` or a BCP 47 tag such as `en`, `ja`, `zh-Hans`, `pt-BR`, or `it` |
-| `--long-summary {skip,truncate,full}` | Above 50,000 characters, skip, summarize a prefix, or send the full transcript |
-| `--cookies-from-browser BROWSER` | Use local `chrome`, `chromium`, `edge`, `firefox`, `safari`, or `brave` cookies |
-| `--gemini-model MODEL_ID` | Select the Gemini model |
-| `--list-gemini-models` | List models supporting `generateContent` |
-| `--version` | Print the installed application version |
+| `url` | YouTube URL or 11-character video ID; omitted with `-M` / `--list-gemini-models` |
+| `-o DIR`, `--output-dir DIR` | Directory for transcript and summary files |
+| `-f {md,txt,json,srt,vtt}`, `--format {md,txt,json,srt,vtt}` | Transcript format; defaults to `md` |
+| `-n`, `--no-summary` | Skip Gemini summarization |
+| `-l LANGUAGE`, `--summary-lang LANGUAGE` | `auto` or a BCP 47 tag such as `en`, `ja`, `zh-Hans`, `pt-BR`, or `it` |
+| `-L {skip,truncate,full}`, `--long-summary {skip,truncate,full}` | Above 50,000 characters, skip, summarize a prefix, or send the full transcript |
+| `-c BROWSER`, `--cookies-from-browser BROWSER` | Use local `chrome`, `chromium`, `edge`, `firefox`, `safari`, or `brave` cookies |
+| `-m MODEL_ID`, `--gemini-model MODEL_ID` | Select the Gemini model |
+| `-M`, `--list-gemini-models` | List models supporting `generateContent` |
+| `-V`, `--version` | Print the installed application version |
+| `-h`, `--help` | Show CLI help |
+
+Long option names must be written in full; prefix abbreviations such as `--out` are not accepted. Use the short aliases above when a compact command is preferred.
 
 The CLI selects the model in this order: `--gemini-model`, `GEMINI_MODEL`, then the built-in `gemini-flash-lite-latest`. If its key is missing or summarization fails, the transcript is still written and a warning is shown.
 
