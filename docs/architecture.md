@@ -8,7 +8,7 @@ This document describes the browser application's implementation and trust bound
 - Let hosted users supply their own Gemini API key only when needed.
 - Allow a local loopback session to use the owner's environment key without exposing it to the browser.
 - Never place an API key in a URL, response body, or short-term job record.
-- Keep local and hosted browser behavior consistent except for access to local browser profiles.
+- Keep the extraction and summary flows consistent between local and hosted modes while limiting browser-profile access and environment-based Gemini fallback to local mode.
 
 ## Request flow
 
@@ -37,7 +37,7 @@ The two requests deliberately separate caption extraction from credential handli
 1. `POST /api/extract` accepts the video and transcript options. Its strict request schema rejects extra fields, including an accidentally supplied API key.
 2. When a summary is requested, the server stores a minimal copy of the extracted summary context and returns a cryptographically random job ID.
 3. `POST /api/summarize` receives that ID and, normally, the user's key in `X-Gemini-Api-Key`. A local loopback request may omit the header when the server process has a fallback key.
-4. The Gemini client forwards the key to Google in `X-Goog-Api-Key`, never in the request URL.
+4. The Gemini client forwards the effective key to Google in `X-Goog-Api-Key`, never in the request URL.
 5. A completed or skipped job is deleted immediately. A failed summary remains retryable until its refreshed TTL expires.
 
 ## Components
@@ -48,7 +48,7 @@ The two requests deliberately separate caption extraction from credential handli
 | FastAPI application | Validate requests, fetch captions, coordinate summaries, and enforce Web security boundaries |
 | YouTube client | Read metadata and the selected original-language caption track |
 | Short-term Job Store | Hold bounded summary context between extraction and summarization |
-| Gemini client | List models and call `generateContent` with the user-supplied key |
+| Gemini client | List models and call `generateContent` with the effective key selected by the Web boundary |
 
 ## Internal HTTP surface
 
