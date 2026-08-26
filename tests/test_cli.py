@@ -88,9 +88,7 @@ def test_cli_rejects_invalid_summary_language() -> None:
 
 
 @pytest.mark.parametrize("option", ["--list-gemini-models", "-M"])
-def test_cli_lists_generate_content_models_without_a_video_url(
-    option, monkeypatch, capsys
-) -> None:
+def test_cli_lists_generate_content_models_without_a_video_url(option, monkeypatch, capsys) -> None:
     monkeypatch.setenv("GEMINI_API_KEY", "environment-secret")
     observed = []
     monkeypatch.setattr(
