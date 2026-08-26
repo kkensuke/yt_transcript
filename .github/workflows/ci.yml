@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - name: Check out the source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78e # v7
+        with:
+          version: 0.11.33
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-suffix: py${{ matrix.python-version }}
+
+      - name: Install locked dependencies
+        run: uv sync --locked --all-extras
+
+      - name: Lint Python
+        run: uv run --frozen --all-extras ruff check .
+
+      - name: Check Python formatting
+        run: uv run --frozen --all-extras ruff format --check .
+
+      - name: Test
+        run: uv run --frozen --all-extras pytest
+
+      - name: Check browser JavaScript syntax
+        if: matrix.python-version == '3.14'
+        run: |
+          node --check src/yt_transcript/ui/app.js
+          node --check src/yt_transcript/ui/enhancements.js
+          node --check src/yt_transcript/ui/theme-control.js
+
+      - name: Build release artifacts
+        if: matrix.python-version == '3.14'
+        run: uv build

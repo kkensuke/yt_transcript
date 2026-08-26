@@ -509,3 +509,48 @@ def test_expired_summary_job_returns_gone(monkeypatch) -> None:
     assert response.status_code == 410
     assert response.json()["error"]["code"] == "summary_job_expired"
     assert "ephemeral-key" not in response.text
+
+
+@pytest.mark.parametrize("option", ["--no-open", "--port"])
+def test_web_parser_rejects_removed_runtime_options(option: str) -> None:
+    with pytest.raises(SystemExit):
+        web.build_parser().parse_args([option])
+
+
+def test_web_main_uses_environment_controls(monkeypatch, capsys) -> None:
+    import uvicorn
+
+    observed = {}
+    application = object()
+    monkeypatch.setenv("PORT", "8123")
+    monkeypatch.setenv("YT_TRANSCRIPT_OPEN_BROWSER", "0")
+
+    def create_application(**kwargs):
+        observed["create_app"] = kwargs
+        return application
+
+    monkeypatch.setattr(web, "create_app", create_application)
+    monkeypatch.setattr(
+        uvicorn,
+        "run",
+        lambda app, **kwargs: observed.update({"app": app, "uvicorn": kwargs}),
+    )
+    monkeypatch.setattr(
+        web.webbrowser,
+        "open",
+        lambda _url: (_ for _ in ()).throw(AssertionError("browser should not open")),
+    )
+
+    assert web.main([]) == 0
+    assert observed == {
+        "create_app": {"mode": "local"},
+        "app": application,
+        "uvicorn": {"host": "127.0.0.1", "port": 8123, "workers": 1},
+    }
+    assert "http://127.0.0.1:8123" in capsys.readouterr().out
+
+
+def test_configured_web_port_is_included_in_the_local_origin_allowlist(monkeypatch) -> None:
+    monkeypatch.setenv("PORT", "8123")
+
+    assert "http://127.0.0.1:8123" in web._configured_origins("local", ["127.0.0.1"])
