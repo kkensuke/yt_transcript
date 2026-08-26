@@ -94,11 +94,17 @@ export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
 yt-transcript "YOUTUBE_URL"
 # or yt-transcript "VIDEO_ID"
 
+# Show help
+yt-transcript --help
+
 # Transcript only
 yt-transcript "YOUTUBE_URL" --no-summary
 
-# WebVTT transcript
-yt-transcript "YOUTUBE_URL" --format vtt --no-summary
+# Write results to another directory
+yt-transcript "YOUTUBE_URL" --output-dir output/
+
+# Write results in JSON format without a summary
+yt-transcript "YOUTUBE_URL" --format json --no-summary
 
 # Use local Chrome cookies for a restricted video
 yt-transcript "YOUTUBE_URL" --cookies-from-browser chrome
@@ -106,32 +112,36 @@ yt-transcript "YOUTUBE_URL" --cookies-from-browser chrome
 # Select a model and summary language
 yt-transcript "YOUTUBE_URL" \
   --gemini-model "gemini-flash-latest" \
-  --summary-lang fr
+  --summary-lang ja
 
 # List models available to the environment key
 yt-transcript --list-gemini-models
 
-# Write results to another directory
-yt-transcript "YOUTUBE_URL" --output-dir output/
+# Short aliases can be combined for compact commands
+yt-transcript "YOUTUBE_URL" -o output/
+yt-transcript "YOUTUBE_URL" -f json -n
+yt-transcript "YOUTUBE_URL" -c chrome
+yt-transcript "YOUTUBE_URL" -m "gemini-flash-latest" -l ja
 ```
 
 When running these examples from a source checkout, add the `uv run` prefix shown in the installation table.
 
 ### CLI options
 
-| Option | Description |
-|---|---|
-| `url` | YouTube URL or 11-character video ID; omitted with `-M` / `--list-gemini-models` |
-| `-o DIR`, `--output-dir DIR` | Directory for transcript and summary files |
-| `-f {md,txt,json,srt,vtt}`, `--format {md,txt,json,srt,vtt}` | Transcript format; defaults to `md` |
-| `-n`, `--no-summary` | Skip Gemini summarization |
-| `-l LANGUAGE`, `--summary-lang LANGUAGE` | `auto` or a BCP 47 tag such as `en`, `ja`, `zh-Hans`, `pt-BR`, or `it` |
-| `-L {skip,truncate,full}`, `--long-summary {skip,truncate,full}` | Above 50,000 characters, skip, summarize a prefix, or send the full transcript |
-| `-c BROWSER`, `--cookies-from-browser BROWSER` | Use local `chrome`, `chromium`, `edge`, `firefox`, `safari`, or `brave` cookies |
-| `-m MODEL_ID`, `--gemini-model MODEL_ID` | Select the Gemini model |
-| `-M`, `--list-gemini-models` | List models supporting `generateContent` |
-| `-V`, `--version` | Print the installed application version |
-| `-h`, `--help` | Show CLI help |
+| Option                                    | Description                                                                      |
+| ----------------------------------------- | -------------------------------------------------------------------------------- |
+| `url`                                     | YouTube URL or 11-character video ID; omitted with `-M` / `--list-gemini-models` |
+| `-o, --output-dir DIR`                    | Directory for transcript and summary files                                       |
+| `-f, --format {md,txt,json,srt,vtt}`      | Transcript format; defaults to `md`                                              |
+| `-n, --no-summary`                        | Skip Gemini summarization                                                        |
+| `-l, --summary-lang LANGUAGE`             | `auto` or a BCP 47 tag such as `en`, `ja`, `zh-Hans`, `pt-BR`, or `it`           |
+| `-L, --long-summary {skip,truncate,full}` | Above 50,000 characters, skip, summarize a prefix, or send the full transcript   |
+| `-c, --cookies-from-browser BROWSER`      | Use local `chrome`, `chromium`, `edge`, `firefox`, `safari`, or `brave` cookies  |
+| `-m, --gemini-model MODEL_ID`             | Select the Gemini model                                                          |
+| `-M, --list-gemini-models`                | List models supporting `generateContent`                                         |
+| `-V, --version`                           | Print the installed application version                                          |
+| `-h, --help`                              | Show CLI help                                                                    |
+
 
 Long option names must be written in full; prefix abbreviations such as `--out` are not accepted. Use the short aliases above when a compact command is preferred.
 
