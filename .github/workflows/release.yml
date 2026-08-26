@@ -101,11 +101,11 @@ jobs:
           mkdir -p Formula
           cp "$RUNNER_TEMP/yt-transcript.rb" Formula/yt-transcript.rb
           git diff --check -- Formula/yt-transcript.rb
-          if git diff --quiet -- Formula/yt-transcript.rb; then
+          git add -- Formula/yt-transcript.rb
+          if git diff --cached --quiet -- Formula/yt-transcript.rb; then
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- Formula/yt-transcript.rb
           git commit -m "yt-transcript ${RELEASE_VERSION#v}"
           git push origin HEAD:main
