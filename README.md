@@ -42,14 +42,14 @@ The source installation lives in the repository's `.venv` rather than on the sys
 |---|---|---|
 | Show the version | `yt-transcript --version` | `uv run yt-transcript --version` |
 | Start the browser app | `yt-transcript web` | `uv run yt-transcript web` |
-| Run the CLI | `yt-transcript "VIDEO_ID" --no-summary` | `uv run yt-transcript "VIDEO_ID" --no-summary` |
+| Run the CLI | `yt-transcript "YOUTUBE_URL" --no-summary` | `uv run yt-transcript "YOUTUBE_URL" --no-summary` |
 
 In Windows PowerShell, environment variables use PowerShell syntax. For example:
 
 ```powershell
 $env:GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
 $env:GEMINI_MODEL = "gemini-flash-lite-latest" # Optional
-uv run yt-transcript "VIDEO_ID"
+uv run yt-transcript "YOUTUBE_URL"
 ```
 
 ## Browser app
@@ -91,19 +91,20 @@ The CLI reads `GEMINI_API_KEY` and optional `GEMINI_MODEL` from its environment.
 ```bash
 # Transcript and summary
 export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-yt-transcript "https://www.youtube.com/watch?v=VIDEO_ID"
+yt-transcript "YOUTUBE_URL"
+# or yt-transcript "VIDEO_ID"
 
 # Transcript only
-yt-transcript "VIDEO_ID" --no-summary
+yt-transcript "YOUTUBE_URL" --no-summary
 
 # WebVTT transcript
-yt-transcript "VIDEO_ID" --format vtt --no-summary
+yt-transcript "YOUTUBE_URL" --format vtt --no-summary
 
 # Use local Chrome cookies for a restricted video
-yt-transcript "VIDEO_ID" --cookies-from-browser chrome
+yt-transcript "YOUTUBE_URL" --cookies-from-browser chrome
 
 # Select a model and summary language
-yt-transcript "VIDEO_ID" \
+yt-transcript "YOUTUBE_URL" \
   --gemini-model "gemini-flash-latest" \
   --summary-lang fr
 
@@ -111,7 +112,7 @@ yt-transcript "VIDEO_ID" \
 yt-transcript --list-gemini-models
 
 # Write results to another directory
-yt-transcript "VIDEO_ID" --output-dir output/
+yt-transcript "YOUTUBE_URL" --output-dir output/
 ```
 
 When running these examples from a source checkout, add the `uv run` prefix shown in the installation table.
