@@ -28,26 +28,35 @@ def build_parser() -> argparse.ArgumentParser:
         prog="yt-transcript",
         description="Extract original-language YouTube captions in multiple formats.",
         epilog="Run 'yt-transcript web --help' to start the local browser app.",
+        allow_abbrev=False,
     )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument("-V", "--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument(
         "url",
         nargs="?",
         help="YouTube URL or 11-character video ID; use 'web' to start the browser app",
     )
     parser.add_argument(
+        "-o",
         "--output-dir",
         type=Path,
         help="Directory for transcript and summary files",
     )
     parser.add_argument(
+        "-f",
         "--format",
         choices=("md", "txt", "json", "srt", "vtt"),
         default="md",
         help="Transcript output format (default: md)",
     )
-    parser.add_argument("--no-summary", action="store_true", help="Skip Gemini summarization")
     parser.add_argument(
+        "-n",
+        "--no-summary",
+        action="store_true",
+        help="Skip Gemini summarization",
+    )
+    parser.add_argument(
+        "-l",
         "--summary-lang",
         type=_summary_language_argument,
         default="auto",
@@ -59,6 +68,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "-L",
         "--long-summary",
         choices=("skip", "truncate", "full"),
         default="skip",
@@ -68,16 +78,19 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "-c",
         "--cookies-from-browser",
         choices=("chrome", "chromium", "edge", "firefox", "safari", "brave"),
         help="Browser cookies for unlisted or age-restricted videos",
     )
     parser.add_argument(
+        "-m",
         "--gemini-model",
         default=default_gemini_model,
         help=f"Gemini model ID (default: {default_gemini_model})",
     )
     parser.add_argument(
+        "-M",
         "--list-gemini-models",
         action="store_true",
         help="List Gemini models that support generateContent, then exit",
