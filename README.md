@@ -1,13 +1,13 @@
 # YouTube Transcript
 
-YouTube Transcript provides a browser app and CLI that turn original-language YouTube captions into reusable Markdown, text, JSON, SRT, or VTT files. Caption extraction works without an API key; Gemini summaries use a key supplied by the person making the request.
+YouTube Transcript provides a browser app and CLI that turn original-language YouTube captions into reusable Markdown, text, JSON, SRT, or VTT files. Caption extraction works without an API key. Gemini summaries require an API key. In hosted mode, each browser user supplies their own key; in local mode, loopback requests may instead use `GEMINI_API_KEY` from the server environment.
 
 ## Features
 
 - Extract manual or auto-generated original-language captions from a YouTube URL or 11-character video ID
 - Include timestamps in every format and source chapters in Markdown, text, and JSON
 - Create a Gemini summary in the transcript language or another BCP 47 language
-- Ask what to do before sending captions longer than 50,000 characters
+- In the browser app, prompt before sending captions longer than 50,000 characters
 - Preview, copy, and download transcript and summary files in the browser
 - Use local browser cookies for restricted videos when running on the same computer
 - Keep the CLI for scripts and batch-friendly file output
@@ -68,7 +68,7 @@ Paste a YouTube URL or video ID, adjust the transcript and summary settings if n
 
 ### Gemini API key behavior
 
-The key is needed only for Gemini summaries and model discovery. The browser sends it to the app for that operation, and the app forwards it to Google without placing it in a URL or saving it. The summary flow clears the input after sending it; clearing, reloading, or closing the tab also removes it.
+The key is needed only for Gemini summaries and model discovery. When a key is entered in the browser, it is sent to the app only for that Gemini operation, and the app forwards it to Google without placing it in a URL or saving it. The summary flow clears the entered key after sending it; clearing, reloading, or closing the tab also removes it.
 
 When the app runs locally, it can use `GEMINI_API_KEY` as a fallback and `GEMINI_MODEL` as the initial model. The key remains in the server process and is never returned to the browser; a key entered in the UI overrides it for that request.
 
@@ -162,7 +162,7 @@ YouTube is temporarily rate-limiting requests. Wait and retry. Local users can t
 
 ### Only Gemini summarization fails
 
-- Re-enter the API key; it is cleared after each summary request.
+- If you entered a key in the browser, re-enter it after a summary request because browser-entered keys are cleared after sending. If you use the local `GEMINI_API_KEY` fallback, verify the environment variable and restart the app after changing it.
 - Check the selected model, quota, and key restrictions.
 - Use **Load available models** with the same key.
 - The transcript remains downloadable. A failed short-term job can be retried until it expires.
