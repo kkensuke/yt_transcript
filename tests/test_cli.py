@@ -132,17 +132,29 @@ def test_cli_reports_the_package_version(option, capsys) -> None:
 
 def test_cli_help_lists_all_extended_options() -> None:
     help_text = build_parser().format_help()
+    expected_options = (
+        "-V",
+        "--version",
+        "-o OUTPUT_DIR",
+        "--output-dir OUTPUT_DIR",
+        "-f {md,txt,json,srt,vtt}",
+        "--format {md,txt,json,srt,vtt}",
+        "-n",
+        "--no-summary",
+        "-l LANGUAGE",
+        "--summary-lang LANGUAGE",
+        "-L {skip,truncate,full}",
+        "--long-summary {skip,truncate,full}",
+        "-c {chrome,chromium,edge,firefox,safari,brave}",
+        "--cookies-from-browser {chrome,chromium,edge,firefox,safari,brave}",
+        "-m GEMINI_MODEL",
+        "--gemini-model GEMINI_MODEL",
+        "-M",
+        "--list-gemini-models",
+    )
 
-    assert "-V, --version" in help_text
-    assert "-o OUTPUT_DIR, --output-dir OUTPUT_DIR" in help_text
-    assert "-f {md,txt,json,srt,vtt}, --format {md,txt,json,srt,vtt}" in help_text
-    assert "-n, --no-summary" in help_text
-    assert "-l LANGUAGE, --summary-lang LANGUAGE" in help_text
-    assert "-L {skip,truncate,full}, --long-summary {skip,truncate,full}" in help_text
-    assert "-c {chrome,chromium,edge,firefox,safari,brave}" in help_text
-    assert "--cookies-from-browser {chrome,chromium,edge,firefox,safari,brave}" in help_text
-    assert "-m GEMINI_MODEL, --gemini-model GEMINI_MODEL" in help_text
-    assert "-M, --list-gemini-models" in help_text
+    for option in expected_options:
+        assert option in help_text
     assert "yt-transcript web --help" in help_text
     assert "--caption-lang" not in help_text
     assert "--no-timestamps" not in help_text
