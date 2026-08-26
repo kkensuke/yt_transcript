@@ -22,7 +22,7 @@ This is not end-to-end credential isolation between the browser and Google: the 
 
 ## Built-in Web protections
 
-- Strict request schemas reject unexpected fields.
+- API endpoints that accept structured request bodies use strict schemas that reject unexpected fields.
 - State-changing API requests require JSON and enforce configured Origin checks.
 - Trusted Host middleware restricts accepted Host headers.
 - Request bodies are capped at 64 KiB.
