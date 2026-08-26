@@ -40,9 +40,9 @@ Before a release, manually test a public captioned video because YouTube behavio
 
 ```text
 src/yt_transcript/
-├── web.py              # FastAPI UI and HTTP boundary
+├── web.py              # FastAPI UI/HTTP boundary and local-loopback Gemini environment fallback
 ├── web_state.py        # Bounded, expiring summary jobs (no credentials)
-├── cli.py              # CLI boundary and CLI-only environment lookup
+├── cli.py              # CLI boundary and CLI Gemini environment configuration
 ├── service.py          # Shared extraction and summarization workflow
 ├── youtube.py          # YouTube metadata and caption ingestion
 ├── gemini.py           # Gemini HTTP client
@@ -75,6 +75,6 @@ The project version in `pyproject.toml` and `src/yt_transcript/__init__.py` must
 
 - Keep changes scoped and add or update tests for behavior changes.
 - Preserve the separation between transcript extraction and Gemini credential handling.
-- Do not add a server-side Gemini key path to the Web application.
+- Do not add a server-side Gemini key path for hosted or non-loopback Web requests. Preserve the existing local-loopback-only environment fallback boundary.
 - Keep browser assets self-contained and same-origin unless the security model and Content Security Policy are deliberately updated.
 - Update README user guidance or the appropriate architecture, deployment, security, or contributor document when behavior changes.
