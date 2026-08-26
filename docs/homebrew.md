@@ -66,7 +66,7 @@ The workflow fails before publishing if the Tap or secret is missing. After corr
    git push origin v0.4.0
    ```
 
-The release workflow verifies that the tagged commit is on `main`, confirms both package version declarations, runs lint and tests, builds the wheel and source distribution, creates the GitHub Release, hashes the GitHub tag archive, renders the Formula, and commits it to the Tap.
+The release workflow verifies that the tagged commit is on `main`, confirms both package version declarations, runs lint and tests, verifies that the Python distributions build, creates the GitHub Release without uploaded package assets, hashes the GitHub tag archive, renders the Formula, and commits it to the Tap.
 
 ## Verifying the Tap
 

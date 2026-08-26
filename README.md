@@ -25,14 +25,31 @@ yt-transcript --version
 
 A personal [Gemini API key](https://aistudio.google.com/api-keys) is optional and is used only for summaries and model discovery. Caption extraction does not require one.
 
-### From source
+### From source (Windows and other platforms)
 
-Source development requires Python 3.11–3.14 and [uv](https://docs.astral.sh/uv/):
+Windows users without Homebrew can run the application from a source checkout. This method also works on macOS and Linux. Install Git and [uv](https://docs.astral.sh/uv/), then sync the CLI and browser-app dependencies locked by the project:
 
 ```bash
 git clone https://github.com/kkensuke/yt_transcript.git
 cd yt_transcript
-uv sync --all-extras
+uv sync --locked --extra web
+uv run yt-transcript --version
+```
+
+The source installation lives in the repository's `.venv` rather than on the system command path. Stay in the checkout and prefix each later command with `uv run`:
+
+| Action | Homebrew installation | From source |
+|---|---|---|
+| Show the version | `yt-transcript --version` | `uv run yt-transcript --version` |
+| Start the browser app | `yt-transcript web` | `uv run yt-transcript web` |
+| Run the CLI | `yt-transcript "VIDEO_ID" --no-summary` | `uv run yt-transcript "VIDEO_ID" --no-summary` |
+
+In Windows PowerShell, environment variables use PowerShell syntax. For example:
+
+```powershell
+$env:GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
+$env:GEMINI_MODEL = "gemini-flash-lite-latest" # Optional
+uv run yt-transcript "VIDEO_ID"
 ```
 
 ## Browser app
@@ -45,14 +62,7 @@ Start the local browser app:
 yt-transcript web
 ```
 
-It starts the app on `127.0.0.1:8000` and opens the default browser. Use a different port or suppress browser opening when needed:
-
-```bash
-yt-transcript web --port 8080
-yt-transcript web --no-open
-```
-
-From a source checkout, prefix installed commands with `uv run`, or use `./scripts/run-app.sh` to prepare the Web dependencies and launch the current source tree.
+It starts the app on `127.0.0.1:8000` and opens the default browser. From a source checkout, run `uv run yt-transcript web` as described above.
 
 Paste a YouTube URL or video ID, adjust the transcript and summary settings if needed, and run the extraction. Completed transcripts and summaries can be previewed, copied, or downloaded from the browser.
 
@@ -104,7 +114,7 @@ yt-transcript --list-gemini-models
 yt-transcript "VIDEO_ID" --output-dir output/
 ```
 
-When running these examples from a source checkout, use `uv run yt-transcript ...`.
+When running these examples from a source checkout, add the `uv run` prefix shown in the installation table.
 
 ### CLI options
 

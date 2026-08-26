@@ -511,24 +511,19 @@ def test_expired_summary_job_returns_gone(monkeypatch) -> None:
     assert "ephemeral-key" not in response.text
 
 
-def test_web_parser_supports_headless_mode_and_custom_port() -> None:
-    args = web.build_parser().parse_args(["--no-open", "--port", "8123"])
-
-    assert args.no_open is True
-    assert args.port == 8123
-
-
-@pytest.mark.parametrize("value", ["0", "65536", "not-a-port"])
-def test_web_parser_rejects_invalid_ports(value: str) -> None:
+@pytest.mark.parametrize("option", ["--no-open", "--port"])
+def test_web_parser_rejects_removed_runtime_options(option: str) -> None:
     with pytest.raises(SystemExit):
-        web.build_parser().parse_args(["--port", value])
+        web.build_parser().parse_args([option])
 
 
-def test_web_main_starts_the_requested_port_without_opening_a_browser(monkeypatch, capsys) -> None:
+def test_web_main_uses_environment_controls(monkeypatch, capsys) -> None:
     import uvicorn
 
     observed = {}
     application = object()
+    monkeypatch.setenv("PORT", "8123")
+    monkeypatch.setenv("YT_TRANSCRIPT_OPEN_BROWSER", "0")
 
     def create_application(**kwargs):
         observed["create_app"] = kwargs
@@ -546,14 +541,16 @@ def test_web_main_starts_the_requested_port_without_opening_a_browser(monkeypatc
         lambda _url: (_ for _ in ()).throw(AssertionError("browser should not open")),
     )
 
-    assert web.main(["--no-open", "--port", "8123"]) == 0
+    assert web.main([]) == 0
     assert observed == {
-        "create_app": {"mode": "local", "port": 8123},
+        "create_app": {"mode": "local"},
         "app": application,
         "uvicorn": {"host": "127.0.0.1", "port": 8123, "workers": 1},
     }
     assert "http://127.0.0.1:8123" in capsys.readouterr().out
 
 
-def test_custom_web_port_is_included_in_the_local_origin_allowlist() -> None:
-    assert "http://127.0.0.1:8123" in web._configured_origins("local", ["127.0.0.1"], port=8123)
+def test_configured_web_port_is_included_in_the_local_origin_allowlist(monkeypatch) -> None:
+    monkeypatch.setenv("PORT", "8123")
+
+    assert "http://127.0.0.1:8123" in web._configured_origins("local", ["127.0.0.1"])

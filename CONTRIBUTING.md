@@ -69,7 +69,7 @@ Additional repository paths:
 
 ## Releases
 
-The project version in `pyproject.toml` and `src/yt_transcript/__init__.py` must match. Stable `vMAJOR.MINOR.PATCH` tags run the release workflow, create GitHub artifacts, and update `kkensuke/homebrew-tap`. See [Homebrew releases](docs/homebrew.md) for setup and verification.
+The project version in `pyproject.toml` and `src/yt_transcript/__init__.py` must match. Stable `vMAJOR.MINOR.PATCH` tags run the release workflow, create a GitHub Release, and update `kkensuke/homebrew-tap`. See [Homebrew releases](docs/homebrew.md) for setup and verification.
 
 ## Change guidelines
 

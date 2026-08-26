@@ -82,8 +82,8 @@ def test_cli_dispatches_the_web_subcommand_without_parsing_it_as_a_url(monkeypat
     observed = []
     monkeypatch.setattr(web, "main", lambda argv: observed.append(argv) or 0)
 
-    assert cli.main(["web", "--no-open", "--port", "8123"]) == 0
-    assert observed == [["--no-open", "--port", "8123"]]
+    assert cli.main(["web"]) == 0
+    assert observed == [[]]
 
 
 def test_cli_reports_the_package_version(capsys) -> None:

@@ -9,6 +9,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_CONFIG = PROJECT_ROOT / "pyproject.toml"
 RUN_APP_SCRIPT = PROJECT_ROOT / "scripts" / "run-app.sh"
 HOMEBREW_RENDERER = PROJECT_ROOT / "scripts" / "render_homebrew_formula.py"
+RELEASE_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "release.yml"
 LICENSE_FILE = PROJECT_ROOT / "LICENSE"
 
 
@@ -55,6 +56,14 @@ def test_project_entry_points_use_clean_python_package_name() -> None:
     assert "yt_transcript.ui" in config["tool"]["setuptools"]["package-data"]
 
 
+def test_release_does_not_upload_python_distribution_assets() -> None:
+    workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+
+    assert 'gh release create "$RELEASE_TAG"' in workflow
+    assert "gh release upload" not in workflow
+    assert "dist/*" not in workflow
+
+
 def test_readme_documents_cli_web_and_byok_configuration() -> None:
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
     contributing = (PROJECT_ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
@@ -64,8 +73,13 @@ def test_readme_documents_cli_web_and_byok_configuration() -> None:
 
     assert "brew install kkensuke/tap/yt-transcript" in readme
     assert "yt-transcript web" in readme
-    assert "yt-transcript web --no-open" in readme
-    assert "./scripts/run-app.sh" in readme
+    assert "From source (Windows and other platforms)" in readme
+    assert "uv sync --locked --extra web" in readme
+    assert "uv run yt-transcript web" in readme
+    assert '$env:GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"' in readme
+    assert "--no-open" not in readme
+    assert "--port" not in readme
+    assert "./scripts/run-app.sh" not in readme
     assert "./scripts/run-app.sh --check" in contributing
     assert "--gemini-model" in readme
     assert "--output-dir" in readme
@@ -108,4 +122,8 @@ def test_homebrew_formula_is_rendered_from_runtime_and_web_dependencies(tmp_path
     assert 'resource "ruff"' not in formula
     assert 'resource "pydantic-core"' not in formula
     assert "yt-transcript web --help" in formula
+    assert '"PORT" => port.to_s' in formula
+    assert '"YT_TRANSCRIPT_OPEN_BROWSER" => "0"' in formula
+    assert '"--no-open"' not in formula
+    assert '"--port"' not in formula
     assert "/healthz" in formula
