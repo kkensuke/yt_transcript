@@ -3,9 +3,9 @@ import urllib.error
 
 import pytest
 
-from yt_transcript.errors import NoTranscriptError, TranscriptDownloadError
-from yt_transcript.models import CaptionTrack, TranscriptSegment, VideoMetadata
-from yt_transcript.youtube import (
+from yttext.errors import NoTranscriptError, TranscriptDownloadError
+from yttext.models import CaptionTrack, TranscriptSegment, VideoMetadata
+from yttext.youtube import (
     _extract_chapters,
     _normalize_entries,
     _select_caption_track,

@@ -10,7 +10,7 @@ if ! command -v uv >/dev/null 2>&1; then
     exit 1
 fi
 
-if [ ! -f "$PROJECT_ROOT/pyproject.toml" ] || [ ! -d "$PROJECT_ROOT/src/yt_transcript" ]; then
+if [ ! -f "$PROJECT_ROOT/pyproject.toml" ] || [ ! -d "$PROJECT_ROOT/src/yttext" ]; then
     echo "error: project root could not be verified: $PROJECT_ROOT" >&2
     exit 1
 fi
@@ -34,11 +34,11 @@ if [ "${1:-}" = "--check" ]; then
 import sys
 from pathlib import Path
 
-import yt_transcript
-from yt_transcript.web import UI_ROOT, create_app
+import yttext
+from yttext.web import UI_ROOT, create_app
 
-expected = (Path(sys.argv[1]) / "src" / "yt_transcript").resolve()
-actual = Path(yt_transcript.__file__).resolve().parent
+expected = (Path(sys.argv[1]) / "src" / "yttext").resolve()
+actual = Path(yttext.__file__).resolve().parent
 assert actual == expected, f"Expected source package {expected}, loaded {actual}"
 app = create_app(mode="local")
 assert {"/", "/api/info", "/api/extract", "/api/summarize"}.issubset(
@@ -50,4 +50,4 @@ print("Source application check passed.")
     exit 0
 fi
 
-exec uv run --no-sync python -m yt_transcript.web
+exec uv run --no-sync python -m yttext.web

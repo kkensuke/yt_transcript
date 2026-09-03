@@ -159,18 +159,18 @@ def create_app(
         store
         if store is not None
         else PendingSummaryStore(
-            ttl_seconds=_positive_int_env("YT_TRANSCRIPT_JOB_TTL", 600),
-            max_jobs=_positive_int_env("YT_TRANSCRIPT_MAX_JOBS", 64),
+            ttl_seconds=_positive_int_env("YTTEXT_JOB_TTL", 600),
+            max_jobs=_positive_int_env("YTTEXT_MAX_JOBS", 64),
             max_characters=_positive_int_env(
-                "YT_TRANSCRIPT_MAX_PENDING_CHARACTERS",
+                "YTTEXT_MAX_PENDING_CHARACTERS",
                 5_000_000,
             ),
         )
     )
-    work_slots = threading.BoundedSemaphore(_positive_int_env("YT_TRANSCRIPT_MAX_WORKERS", 4))
+    work_slots = threading.BoundedSemaphore(_positive_int_env("YTTEXT_MAX_WORKERS", 4))
 
     application = FastAPI(
-        title="YouTube Transcript",
+        title="yttext",
         version=__version__,
         docs_url=None,
         redoc_url=None,
@@ -481,9 +481,9 @@ def _error_content(code: str, message: str, hint: str = "") -> dict[str, object]
 
 
 def _configured_mode() -> Literal["local", "hosted"]:
-    value = os.getenv("YT_TRANSCRIPT_MODE", "local").strip().lower()
+    value = os.getenv("YTTEXT_MODE", "local").strip().lower()
     if value not in {"local", "hosted"}:
-        raise RuntimeError("YT_TRANSCRIPT_MODE must be either local or hosted.")
+        raise RuntimeError("YTTEXT_MODE must be either local or hosted.")
     return value  # type: ignore[return-value]
 
 
@@ -520,14 +520,12 @@ def _may_use_local_gemini_configuration(
 
 def _configured_hosts(mode: Literal["local", "hosted"]) -> list[str]:
     configured = [
-        value.strip()
-        for value in os.getenv("YT_TRANSCRIPT_ALLOWED_HOSTS", "").split(",")
-        if value.strip()
+        value.strip() for value in os.getenv("YTTEXT_ALLOWED_HOSTS", "").split(",") if value.strip()
     ]
     if configured:
         return configured
     if mode == "hosted":
-        raise RuntimeError("YT_TRANSCRIPT_ALLOWED_HOSTS is required in hosted mode.")
+        raise RuntimeError("YTTEXT_ALLOWED_HOSTS is required in hosted mode.")
     return ["127.0.0.1", "localhost", "testserver"]
 
 
@@ -537,7 +535,7 @@ def _configured_origins(
 ) -> set[str]:
     configured = {
         value.strip().rstrip("/")
-        for value in os.getenv("YT_TRANSCRIPT_ALLOWED_ORIGINS", "").split(",")
+        for value in os.getenv("YTTEXT_ALLOWED_ORIGINS", "").split(",")
         if value.strip()
     }
     if configured:
@@ -565,8 +563,8 @@ def _positive_int_env(name: str, default: int) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     return argparse.ArgumentParser(
-        prog="yt-transcript web",
-        description="Start the local YouTube Transcript browser app.",
+        prog="yttext web",
+        description="Start the local yttext browser app.",
     )
 
 
@@ -576,18 +574,16 @@ def main(argv: list[str] | None = None) -> int:
     build_parser().parse_args(argv)
     mode = _configured_mode()
     port = _positive_int_env("PORT", 8000)
-    host = os.getenv("YT_TRANSCRIPT_HOST", "").strip() or (
-        "127.0.0.1" if mode == "local" else "0.0.0.0"
-    )
+    host = os.getenv("YTTEXT_HOST", "").strip() or ("127.0.0.1" if mode == "local" else "0.0.0.0")
     browser_url = f"http://127.0.0.1:{port}"
     application = create_app(mode=mode)
-    should_open = mode == "local" and os.getenv("YT_TRANSCRIPT_OPEN_BROWSER", "1") != "0"
+    should_open = mode == "local" and os.getenv("YTTEXT_OPEN_BROWSER", "1") != "0"
     if should_open:
         timer = threading.Timer(0.8, lambda: webbrowser.open(browser_url))
         timer.daemon = True
         timer.start()
 
-    print(f"YouTube Transcript is running at:\n{browser_url}\n\nPress Ctrl+C to stop.", flush=True)
+    print(f"yttext is running at:\n{browser_url}\n\nPress Ctrl+C to stop.", flush=True)
     uvicorn.run(application, host=host, port=port, workers=1)
     return 0
 

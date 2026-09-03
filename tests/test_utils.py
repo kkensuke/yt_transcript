@@ -1,4 +1,4 @@
-from yt_transcript.utils import (
+from yttext.utils import (
     detect_language,
     format_timestamp,
     normalize_caption_spacing,

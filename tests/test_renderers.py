@@ -2,14 +2,14 @@ import json
 
 import pytest
 
-from yt_transcript.models import (
+from yttext.models import (
     CaptionTrack,
     Chapter,
     TranscriptDocument,
     TranscriptSegment,
     VideoMetadata,
 )
-from yt_transcript.renderers import render_transcript, summary_source_text
+from yttext.renderers import render_transcript, summary_source_text
 
 
 @pytest.fixture
