@@ -46,6 +46,15 @@ pipx install 'yttext[web]'
 yttext web
 ```
 
+Whether or not you installed the `web` extra, you can uninstall `yttext` using the same tool you installed it with:
+
+```bash
+uv tool uninstall yttext
+# or
+pipx uninstall yttext
+```
+
+
 ### Homebrew
 
 Homebrew installs the CLI and browser app together without requiring a separately managed Python environment:
@@ -53,6 +62,12 @@ Homebrew installs the CLI and browser app together without requiring a separatel
 ```bash
 brew install kkensuke/tap/yttext
 yttext --version
+```
+
+Uninstall with:
+
+```bash
+brew uninstall yttext
 ```
 
 A personal [Gemini API key](https://aistudio.google.com/api-keys) is optional and is used only for summaries and model discovery. Caption extraction does not require one.
