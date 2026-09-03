@@ -1,6 +1,6 @@
 import json
 
-from yt_transcript import gemini
+from yttext import gemini
 
 
 class FakeResponse:

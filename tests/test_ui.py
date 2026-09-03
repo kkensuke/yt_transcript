@@ -3,7 +3,7 @@ from importlib.resources import files
 
 
 def _asset(name: str) -> str:
-    return files("yt_transcript.ui").joinpath(name).read_text(encoding="utf-8")
+    return files("yttext.ui").joinpath(name).read_text(encoding="utf-8")
 
 
 def test_ui_uses_external_same_origin_assets() -> None:

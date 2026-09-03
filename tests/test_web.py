@@ -4,16 +4,16 @@ from dataclasses import replace
 import pytest
 from fastapi.testclient import TestClient
 
-from yt_transcript import web
-from yt_transcript.models import (
+from yttext import web
+from yttext.models import (
     CaptionTrack,
     OutputArtifact,
     TranscriptDocument,
     TranscriptSegment,
     VideoMetadata,
 )
-from yt_transcript.service import ExtractionResult
-from yt_transcript.web_state import PendingSummaryStore
+from yttext.service import ExtractionResult
+from yttext.web_state import PendingSummaryStore
 
 
 @pytest.fixture(autouse=True)
@@ -523,7 +523,7 @@ def test_web_main_uses_environment_controls(monkeypatch, capsys) -> None:
     observed = {}
     application = object()
     monkeypatch.setenv("PORT", "8123")
-    monkeypatch.setenv("YT_TRANSCRIPT_OPEN_BROWSER", "0")
+    monkeypatch.setenv("YTTEXT_OPEN_BROWSER", "0")
 
     def create_application(**kwargs):
         observed["create_app"] = kwargs

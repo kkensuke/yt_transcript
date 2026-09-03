@@ -3,13 +3,14 @@ import sys
 import tomllib
 from pathlib import Path
 
-from yt_transcript import __version__
+from yttext import __version__
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_CONFIG = PROJECT_ROOT / "pyproject.toml"
 RUN_APP_SCRIPT = PROJECT_ROOT / "scripts" / "run-app.sh"
 HOMEBREW_RENDERER = PROJECT_ROOT / "scripts" / "render_homebrew_formula.py"
 RELEASE_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "release.yml"
+PYPI_GUIDE = PROJECT_ROOT / "docs" / "pypi.md"
 LICENSE_FILE = PROJECT_ROOT / "LICENSE"
 
 
@@ -22,9 +23,9 @@ def test_run_app_script_launches_the_current_web_source() -> None:
 
     assert "uv sync --no-install-project --extra web --inexact" in script
     assert 'export PYTHONPATH="$PROJECT_ROOT/src' in script
-    assert "uv run --no-sync python -m yt_transcript.web" in script
-    assert 'src" / "yt_transcript"' in script
-    assert "import yt_transcript" in script
+    assert "uv run --no-sync python -m yttext.web" in script
+    assert 'src" / "yttext"' in script
+    assert "import yttext" in script
     assert "actual == expected" in script
     assert 'create_app(mode="local")' in script
     assert "uv run --no-editable" not in script
@@ -50,18 +51,29 @@ def test_web_dependency_is_optional_for_cli_users() -> None:
 def test_project_entry_points_use_clean_python_package_name() -> None:
     config = tomllib.loads(PROJECT_CONFIG.read_text(encoding="utf-8"))
 
-    scripts = config["project"]["scripts"]
-    assert scripts == {"yt-transcript": "yt_transcript.cli:main"}
+    project = config["project"]
+    assert project["name"] == "yttext"
+    assert project["urls"]["Repository"] == "https://github.com/kkensuke/yttext"
+    scripts = project["scripts"]
+    assert scripts == {"yttext": "yttext.cli:main"}
     assert "gui-scripts" not in config["project"]
-    assert "yt_transcript.ui" in config["tool"]["setuptools"]["package-data"]
+    assert "yttext.ui" in config["tool"]["setuptools"]["package-data"]
 
 
-def test_release_does_not_upload_python_distribution_assets() -> None:
+def test_release_publishes_tested_distributions_with_isolated_oidc_permission() -> None:
     workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
 
+    assert "name: Verify and build" in workflow
+    assert "name: Publish to PyPI" in workflow
+    assert "needs: build" in workflow
+    assert "name: pypi" in workflow
+    assert "id-token: write" in workflow
+    assert "pypa/gh-action-pypi-publish@" in workflow
+    assert "actions/upload-artifact@" in workflow
+    assert "actions/download-artifact@" in workflow
+    assert "PYPI_TOKEN" not in workflow
     assert 'gh release create "$RELEASE_TAG"' in workflow
     assert "gh release upload" not in workflow
-    assert "dist/*" not in workflow
 
 
 def test_readme_documents_cli_web_and_byok_configuration() -> None:
@@ -70,12 +82,16 @@ def test_readme_documents_cli_web_and_byok_configuration() -> None:
     deployment = (PROJECT_ROOT / "docs" / "deployment.md").read_text(encoding="utf-8")
     architecture = (PROJECT_ROOT / "docs" / "architecture.md").read_text(encoding="utf-8")
     security = (PROJECT_ROOT / "SECURITY.md").read_text(encoding="utf-8")
+    pypi_guide = PYPI_GUIDE.read_text(encoding="utf-8")
 
-    assert "brew install kkensuke/tap/yt-transcript" in readme
-    assert "yt-transcript web" in readme
+    assert 'uvx yttext "YOUTUBE_URL" --no-summary' in readme
+    assert "pipx install yttext" in readme
+    assert "uvx --from 'yttext[web]' yttext web" in readme
+    assert "brew install kkensuke/tap/yttext" in readme
+    assert "yttext web" in readme
     assert "From source (Windows and other platforms)" in readme
     assert "uv sync --locked --extra web" in readme
-    assert "uv run yt-transcript web" in readme
+    assert "uv run yttext web" in readme
     assert '$env:GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"' in readme
     assert "--no-open" not in readme
     assert "--port" not in readme
@@ -85,7 +101,9 @@ def test_readme_documents_cli_web_and_byok_configuration() -> None:
     assert "--output-dir" in readme
     assert "GEMINI_MODEL" in readme
     assert "Load available models" in readme
-    assert "YT_TRANSCRIPT_MODE=hosted" in deployment
+    assert "YTTEXT_MODE=hosted" in deployment
+    assert "GitHub repository | `yttext`" in pypi_guide
+    assert "Environment name | `pypi`" in pypi_guide
     assert "X-Gemini-Api-Key" in architecture
     assert "Short-term Job Store" in architecture
     assert "one application worker" in (deployment + security).lower()
@@ -94,7 +112,7 @@ def test_readme_documents_cli_web_and_byok_configuration() -> None:
 
 
 def test_homebrew_formula_is_rendered_from_runtime_and_web_dependencies(tmp_path) -> None:
-    output = tmp_path / "Formula" / "yt-transcript.rb"
+    output = tmp_path / "Formula" / "yttext.rb"
     subprocess.run(
         [
             sys.executable,
@@ -110,7 +128,7 @@ def test_homebrew_formula_is_rendered_from_runtime_and_web_dependencies(tmp_path
     )
 
     formula = output.read_text(encoding="utf-8")
-    assert "class YtTranscript < Formula" in formula
+    assert "class Yttext < Formula" in formula
     assert f"refs/tags/v{__version__}.tar.gz" in formula
     assert 'head "https://github.com/' not in formula
     assert 'depends_on "python@3.14"' in formula
@@ -121,9 +139,9 @@ def test_homebrew_formula_is_rendered_from_runtime_and_web_dependencies(tmp_path
     assert 'resource "pytest"' not in formula
     assert 'resource "ruff"' not in formula
     assert 'resource "pydantic-core"' not in formula
-    assert "yt-transcript web --help" in formula
+    assert "yttext web --help" in formula
     assert '"PORT" => port.to_s' in formula
-    assert '"YT_TRANSCRIPT_OPEN_BROWSER" => "0"' in formula
+    assert '"YTTEXT_OPEN_BROWSER" => "0"' in formula
     assert '"--no-open"' not in formula
     assert '"--port"' not in formula
     assert "/healthz" in formula

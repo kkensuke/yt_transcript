@@ -1,9 +1,9 @@
 import pytest
 
-from yt_transcript import service
-from yt_transcript.errors import GeminiApiError, InvalidVideoError
-from yt_transcript.models import CaptionTrack, TranscriptSegment, VideoMetadata
-from yt_transcript.service import ExtractionOptions
+from yttext import service
+from yttext.errors import GeminiApiError, InvalidVideoError
+from yttext.models import CaptionTrack, TranscriptSegment, VideoMetadata
+from yttext.service import ExtractionOptions
 
 
 def test_options_validate_mapping_payload() -> None:

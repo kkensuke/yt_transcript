@@ -25,9 +25,9 @@ def _summary_language_argument(value: str) -> str:
 def build_parser() -> argparse.ArgumentParser:
     default_gemini_model = os.getenv("GEMINI_MODEL", "").strip() or DEFAULT_GEMINI_MODEL
     parser = argparse.ArgumentParser(
-        prog="yt-transcript",
+        prog="yttext",
         description="Extract original-language YouTube captions in multiple formats.",
-        epilog="Run 'yt-transcript web --help' to start the local browser app.",
+        epilog="Run 'yttext web --help' to start the local browser app.",
         allow_abbrev=False,
     )
     parser.add_argument("-V", "--version", action="version", version=f"%(prog)s {__version__}")

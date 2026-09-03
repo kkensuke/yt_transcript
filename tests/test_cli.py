@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from yt_transcript import __version__, cli, web
-from yt_transcript.cli import build_parser
+from yttext import __version__, cli, web
+from yttext.cli import build_parser
 
 
 def test_cli_accepts_gemini_model_override() -> None:
@@ -127,7 +127,7 @@ def test_cli_reports_the_package_version(option, capsys) -> None:
         cli.main([option])
 
     assert exit_info.value.code == 0
-    assert capsys.readouterr().out.strip() == f"yt-transcript {__version__}"
+    assert capsys.readouterr().out.strip() == f"yttext {__version__}"
 
 
 def test_cli_help_lists_all_extended_options() -> None:
@@ -155,6 +155,6 @@ def test_cli_help_lists_all_extended_options() -> None:
 
     for option in expected_options:
         assert option in help_text
-    assert "yt-transcript web --help" in help_text
+    assert "yttext web --help" in help_text
     assert "--caption-lang" not in help_text
     assert "--no-timestamps" not in help_text

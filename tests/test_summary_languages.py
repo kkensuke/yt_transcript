@@ -1,6 +1,6 @@
 import pytest
 
-from yt_transcript.summary_languages import (
+from yttext.summary_languages import (
     normalize_summary_language,
     summary_language_options,
     summary_language_prompt_name,

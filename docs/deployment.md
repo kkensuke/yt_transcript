@@ -9,11 +9,11 @@ Install the Web dependencies and configure exact hosted-mode allowlists:
 ```bash
 uv sync --extra web
 
-export YT_TRANSCRIPT_MODE=hosted
-export YT_TRANSCRIPT_ALLOWED_HOSTS="transcript.example.com"
-export YT_TRANSCRIPT_ALLOWED_ORIGINS="https://transcript.example.com"
+export YTTEXT_MODE=hosted
+export YTTEXT_ALLOWED_HOSTS="transcript.example.com"
+export YTTEXT_ALLOWED_ORIGINS="https://transcript.example.com"
 
-uv run --extra web uvicorn yt_transcript.web:app \
+uv run --extra web uvicorn yttext.web:app \
   --host 0.0.0.0 \
   --port "${PORT:-8000}" \
   --workers 1
@@ -31,18 +31,20 @@ Do not configure `GEMINI_API_KEY` or `GEMINI_MODEL` for a hosted Web service. Ho
 
 ## Environment variables
 
+Version 0.5.0 renamed the application-specific prefix from `YT_TRANSCRIPT_` to `YTTEXT_`. Update deployed configuration when upgrading; the former names are not read as aliases.
+
 | Variable | Default | Purpose |
 |---|---:|---|
-| `YT_TRANSCRIPT_MODE` | `local` | Select `local` or `hosted` capabilities and defaults |
-| `YT_TRANSCRIPT_ALLOWED_HOSTS` | Local hosts | Comma-separated Host allowlist; required in hosted mode |
-| `YT_TRANSCRIPT_ALLOWED_ORIGINS` | Derived from mode and allowed hosts | Comma-separated Origin allowlist for state-changing API calls; local mode uses loopback hosts plus `PORT`, while hosted mode derives HTTPS origins from allowed hosts when unset |
-| `YT_TRANSCRIPT_HOST` | Mode-dependent | Host used by `yt-transcript web` and `run-app.sh` |
+| `YTTEXT_MODE` | `local` | Select `local` or `hosted` capabilities and defaults |
+| `YTTEXT_ALLOWED_HOSTS` | Local hosts | Comma-separated Host allowlist; required in hosted mode |
+| `YTTEXT_ALLOWED_ORIGINS` | Derived from mode and allowed hosts | Comma-separated Origin allowlist for state-changing API calls; local mode uses loopback hosts plus `PORT`, while hosted mode derives HTTPS origins from allowed hosts when unset |
+| `YTTEXT_HOST` | Mode-dependent | Host used by `yttext web` and `run-app.sh` |
 | `PORT` | `8000` | Listening port and local allowed-origin port |
-| `YT_TRANSCRIPT_OPEN_BROWSER` | `1` locally | Set to `0` to suppress automatic browser opening |
-| `YT_TRANSCRIPT_JOB_TTL` | `600` | Pending summary lifetime in seconds |
-| `YT_TRANSCRIPT_MAX_JOBS` | `64` | Maximum pending summary jobs per process |
-| `YT_TRANSCRIPT_MAX_PENDING_CHARACTERS` | `5000000` | Total pending caption characters per process |
-| `YT_TRANSCRIPT_MAX_WORKERS` | `4` | Maximum concurrent blocking extraction and Gemini operations |
+| `YTTEXT_OPEN_BROWSER` | `1` locally | Set to `0` to suppress automatic browser opening |
+| `YTTEXT_JOB_TTL` | `600` | Pending summary lifetime in seconds |
+| `YTTEXT_MAX_JOBS` | `64` | Maximum pending summary jobs per process |
+| `YTTEXT_MAX_PENDING_CHARACTERS` | `5000000` | Total pending caption characters per process |
+| `YTTEXT_MAX_WORKERS` | `4` | Maximum concurrent blocking extraction and Gemini operations |
 | `GEMINI_API_KEY` | Unset | Local loopback fallback for summaries and model discovery; ignored in hosted mode |
 | `GEMINI_MODEL` | `gemini-flash-lite-latest` | Initial local model; ignored in hosted mode |
 
@@ -57,7 +59,7 @@ Scaling out requires one of the following while continuing to exclude credential
 - a shared bounded TTL store; or
 - verified session affinity for the full extraction-to-summary flow.
 
-The `YT_TRANSCRIPT_MAX_WORKERS` setting controls concurrent blocking work inside the single application process; it does not create Uvicorn worker processes.
+The `YTTEXT_MAX_WORKERS` setting controls concurrent blocking work inside the single application process; it does not create Uvicorn worker processes.
 
 Hosted mode cannot use cookies from a visitor's browser. Restricted videos that require local browser cookies must be processed with a local instance or the CLI.
 

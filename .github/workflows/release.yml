@@ -6,29 +6,22 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
+  build:
+    name: Verify and build
     runs-on: ubuntu-latest
-    environment: release
 
     steps:
       - name: Check out the source
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-
-      - name: Check out the Homebrew tap
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          repository: kkensuke/homebrew-tap
-          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          path: homebrew-tap
 
       - name: Install uv and Python
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78e # v7
@@ -53,7 +46,7 @@ jobs:
           with Path("pyproject.toml").open("rb") as source:
               project_version = tomllib.load(source)["project"]["version"]
           namespace = {}
-          exec(Path("src/yt_transcript/__init__.py").read_text(encoding="utf-8"), namespace)
+          exec(Path("src/yttext/__init__.py").read_text(encoding="utf-8"), namespace)
           package_version = namespace["__version__"]
           if version != project_version or version != package_version:
               raise SystemExit(
@@ -68,6 +61,62 @@ jobs:
           uv run --frozen --all-extras ruff format --check .
           uv run --frozen --all-extras pytest
           uv build
+
+      - name: Upload the Python distributions
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/yttext
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download the Python distributions
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: python-distributions
+          path: dist/
+
+      - name: Publish the Python distributions
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+
+  release:
+    name: Publish GitHub and Homebrew releases
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out the source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Check out the Homebrew tap
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: kkensuke/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78e # v7
+        with:
+          version: 0.11.33
+          python-version: "3.14"
+          enable-cache: true
 
       - name: Create the GitHub release
         env:
@@ -91,7 +140,7 @@ jobs:
           uv run --frozen --all-extras python scripts/render_homebrew_formula.py \
             --version "${RELEASE_TAG#v}" \
             --source-sha256 "$source_sha256" \
-            --output "$RUNNER_TEMP/yt-transcript.rb"
+            --output "$RUNNER_TEMP/yttext.rb"
 
       - name: Publish the Homebrew formula
         env:
@@ -99,13 +148,14 @@ jobs:
         working-directory: homebrew-tap
         run: |
           mkdir -p Formula
-          cp "$RUNNER_TEMP/yt-transcript.rb" Formula/yt-transcript.rb
-          git diff --check -- Formula/yt-transcript.rb
-          git add -- Formula/yt-transcript.rb
-          if git diff --cached --quiet -- Formula/yt-transcript.rb; then
+          cp "$RUNNER_TEMP/yttext.rb" Formula/yttext.rb
+          git rm --ignore-unmatch Formula/yt-transcript.rb
+          git diff --check -- Formula/yttext.rb
+          git add Formula/yttext.rb
+          if git diff --cached --quiet -- Formula/yttext.rb Formula/yt-transcript.rb; then
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "yt-transcript ${RELEASE_VERSION#v}"
+          git commit -m "yttext ${RELEASE_VERSION#v}"
           git push origin HEAD:main

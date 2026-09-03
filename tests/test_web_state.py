@@ -2,15 +2,15 @@ from dataclasses import fields
 
 import pytest
 
-from yt_transcript.models import (
+from yttext.models import (
     CaptionTrack,
     OutputArtifact,
     TranscriptDocument,
     TranscriptSegment,
     VideoMetadata,
 )
-from yt_transcript.service import ExtractionResult
-from yt_transcript.web_state import (
+from yttext.service import ExtractionResult
+from yttext.web_state import (
     PendingSummaryJob,
     PendingSummaryStore,
     SummaryJobBusy,

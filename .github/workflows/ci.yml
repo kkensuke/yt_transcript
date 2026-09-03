@@ -45,9 +45,9 @@ jobs:
       - name: Check browser JavaScript syntax
         if: matrix.python-version == '3.14'
         run: |
-          node --check src/yt_transcript/ui/app.js
-          node --check src/yt_transcript/ui/enhancements.js
-          node --check src/yt_transcript/ui/theme-control.js
+          node --check src/yttext/ui/app.js
+          node --check src/yttext/ui/enhancements.js
+          node --check src/yttext/ui/theme-control.js
 
       - name: Build release artifacts
         if: matrix.python-version == '3.14'
