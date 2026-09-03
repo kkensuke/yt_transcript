@@ -155,6 +155,6 @@ def test_cli_help_lists_all_extended_options() -> None:
 
     for option in expected_options:
         assert option in help_text
-    assert "yttext web --help" in help_text
+    assert "Run 'yttext web' to start the local browser app." in help_text
     assert "--caption-lang" not in help_text
     assert "--no-timestamps" not in help_text
