@@ -27,7 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="yttext",
         description="Extract original-language YouTube captions in multiple formats.",
-        epilog="Run 'yttext web --help' to start the local browser app.",
+        epilog="Run 'yttext web' to start the local browser app.",
         allow_abbrev=False,
     )
     parser.add_argument("-V", "--version", action="version", version=f"%(prog)s {__version__}")
@@ -117,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if not args.url:
-        parser.error("url is required unless --list-gemini-models is used")
+        parser.error("url is required unless -M/--list-gemini-models is used; see 'yttext --help'")
 
     options = ExtractionOptions(
         url=args.url,

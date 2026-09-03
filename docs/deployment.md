@@ -31,8 +31,6 @@ Do not configure `GEMINI_API_KEY` or `GEMINI_MODEL` for a hosted Web service. Ho
 
 ## Environment variables
 
-Version 0.5.0 renamed the application-specific prefix from `YT_TRANSCRIPT_` to `YTTEXT_`. Update deployed configuration when upgrading; the former names are not read as aliases.
-
 | Variable | Default | Purpose |
 |---|---:|---|
 | `YTTEXT_MODE` | `local` | Select `local` or `hosted` capabilities and defaults |
