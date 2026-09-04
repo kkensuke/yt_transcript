@@ -4,16 +4,12 @@
   const colorScheme = document.querySelector('meta[name="color-scheme"]');
   if (colorScheme) colorScheme.setAttribute("content", "light dark");
 
-  const modelInput = document.getElementById("geminiModel");
+  const modelSelect = document.getElementById("geminiModel");
   const modelSource = document.getElementById("geminiModelSource");
   const apiKeyInput = document.getElementById("apiKey");
-  if (!modelInput || !modelSource || !apiKeyInput) return;
+  if (!modelSelect || !modelSource || !apiKeyInput) return;
 
-  const datalist = document.createElement("datalist");
-  datalist.id = "geminiModelOptions";
-  document.body.appendChild(datalist);
-  modelInput.setAttribute("list", datalist.id);
-  modelInput.setAttribute("autocomplete", "off");
+  let configuredModel = modelSelect.value.trim();
 
   const tools = document.createElement("div");
   tools.className = "model-tools";
@@ -21,12 +17,24 @@
   loadButton.type = "button";
   loadButton.className = "button button-secondary model-load-button";
   loadButton.textContent = "Load available models";
+  loadButton.disabled = true;
   const status = document.createElement("span");
   status.className = "model-list-status";
   status.setAttribute("role", "status");
   status.setAttribute("aria-live", "polite");
   tools.append(loadButton, status);
   modelSource.insertAdjacentElement("afterend", tools);
+
+  function showConfiguredModel(model) {
+    const value = String(model || "").trim();
+    if (!value) return;
+    configuredModel = value;
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    modelSelect.replaceChildren(option);
+    modelSelect.value = value;
+  }
 
   async function loadModels() {
     const apiKey = apiKeyInput.value.trim();
@@ -36,6 +44,8 @@
       apiKeyInput.focus();
       return;
     }
+
+    const preferredModel = modelSelect.value || configuredModel;
     loadButton.disabled = true;
     status.textContent = "Loading…";
     try {
@@ -61,15 +71,35 @@
         status.textContent = payload?.error?.message || "Could not load models.";
         return;
       }
+
       const models = Array.isArray(payload?.models) ? payload.models : [];
-      datalist.replaceChildren(
-        ...models.map((model) => {
-          const option = document.createElement("option");
-          option.value = model;
-          return option;
-        }),
-      );
-      status.textContent = models.length ? `${models.length} models available` : "No models found";
+      if (!models.length) {
+        status.textContent = "No models found";
+        return;
+      }
+
+      const options = models.map((model) => {
+        const option = document.createElement("option");
+        option.value = model;
+        option.textContent = model;
+        return option;
+      });
+      if (preferredModel && models.includes(preferredModel)) {
+        modelSelect.replaceChildren(...options);
+        modelSelect.value = preferredModel;
+        status.textContent = `${models.length} models available`;
+      } else {
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Choose a Gemini model";
+        placeholder.disabled = true;
+        placeholder.selected = true;
+        modelSelect.replaceChildren(placeholder, ...options);
+        status.textContent = preferredModel
+          ? `${models.length} models available; current setting is unavailable`
+          : `${models.length} models available`;
+      }
+      loadButton.textContent = "Refresh models";
     } catch (_error) {
       status.textContent = "Could not load models. Check your connection and try again.";
     } finally {
@@ -78,4 +108,11 @@
   }
 
   loadButton.addEventListener("click", () => loadModels());
+  window.App.ready.then((appInfo) => {
+    showConfiguredModel(appInfo?.gemini_model || configuredModel);
+    loadButton.disabled = false;
+    if (appInfo?.capabilities?.server_api_key) {
+      loadModels();
+    }
+  });
 })();
