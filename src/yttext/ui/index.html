@@ -211,14 +211,10 @@
                 </div>
 
                 <div class="field-block">
-                  <label class="field-label" for="geminiModel">Gemini Model ID</label>
-                  <input
-                    id="geminiModel"
-                    type="text"
-                    spellcheck="false"
-                    aria-describedby="geminiModelSource"
-                    placeholder="Example: gemini-flash-latest"
-                  >
+                  <label class="field-label" for="geminiModel">Gemini model</label>
+                  <select id="geminiModel" aria-describedby="geminiModelSource">
+                    <option value="gemini-flash-lite-latest">gemini-flash-lite-latest</option>
+                  </select>
                   <p id="geminiModelSource" class="field-status">Checking the configuration source.</p>
                 </div>
               </div>
