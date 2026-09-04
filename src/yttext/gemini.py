@@ -128,11 +128,15 @@ def _build_prompt(text: str, language: str) -> str:
 
 - {language_instruction}
 - Preserve important claims, evidence, and conclusions
-- Use headings and lists where they improve readability
+- Use the Markdown features supported by the preview: paragraphs, H1-H6 headings, emphasis,
+  strikethrough, links, blockquotes, fenced code blocks, nested ordered or unordered lists,
+  tables, horizontal rules, and LaTeX formulas
+- Use LaTeX for formulas when helpful; delimit inline formulas with \\( ... \\) and display
+  formulas with \\[ ... \\]. Do not use dollar-sign delimiters
 - Correct obvious ASR errors from context
 - Mark uncertain interpretations with [Uncertain]
 - Retain important source-language technical terms in parentheses when helpful
-- Use LaTeX for formulas when helpful
+- Do not use raw HTML, images, or task lists
 - Return only the summary document, without a preface or acknowledgement
 
 ---

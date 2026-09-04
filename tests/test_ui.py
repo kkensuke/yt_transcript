@@ -10,9 +10,14 @@ def test_ui_uses_external_same_origin_assets() -> None:
     html = _asset("index.html")
 
     for asset in (
+        "Temml-Local.css",
         "styles.css",
         "enhancements.css",
         "theme-control.css",
+        "markdown-it.min.js",
+        "mdit-plugin-tex.min.js",
+        "temml.min.js",
+        "markdown-renderer.js",
         "app.js",
         "enhancements.js",
         "theme-control.js",
@@ -20,6 +25,28 @@ def test_ui_uses_external_same_origin_assets() -> None:
         assert f"/static/{asset}" in html
     assert not re.search(r"<script(?![^>]+\bsrc=)[^>]*>", html)
     assert "https://cdn" not in html
+
+
+def test_ui_uses_bundled_markdown_and_math_with_safe_rendering_defaults() -> None:
+    html = _asset("index.html")
+    app = _asset("app.js")
+    renderer = _asset("markdown-renderer.js")
+
+    assert html.index("/static/markdown-it.min.js") < html.index("/static/markdown-renderer.js")
+    assert html.index("/static/mdit-plugin-tex.min.js") < html.index("/static/markdown-renderer.js")
+    assert html.index("/static/temml.min.js") < html.index("/static/markdown-renderer.js")
+    assert html.index("/static/markdown-renderer.js") < html.index("/static/app.js")
+    assert "window.YttextMarkdown.render(content)" in app
+    assert "function renderMarkdown(" not in app
+    assert "html: false" in renderer
+    assert "parser.renderer.rules.image" in renderer
+    assert 'attrSet("rel", "noopener noreferrer")' in renderer
+    assert 'delimiters: "brackets"' in renderer
+    assert "mathFence: true" in renderer
+    assert "maxExpand: 1000" in renderer
+    assert "maxSize: [20, 1000]" in renderer
+    assert "throwOnError: false" in renderer
+    assert "trust: false" in renderer
 
 
 def test_ui_labels_and_descriptions_reference_existing_controls() -> None:

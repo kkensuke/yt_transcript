@@ -104,6 +104,12 @@ def test_explicit_and_custom_languages_use_the_same_prompt_structure() -> None:
     for instruction in (
         "Preserve important claims, evidence, and conclusions",
         "Retain important source-language technical terms in parentheses when helpful",
+        "nested ordered or unordered lists",
+        "LaTeX formulas",
+        r"delimit inline formulas with \( ... \)",
+        r"formulas with \[ ... \]",
+        "Do not use dollar-sign delimiters",
+        "Do not use raw HTML, images, or task lists",
         "Return only the summary document",
     ):
         assert instruction in japanese_prompt

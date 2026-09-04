@@ -8,7 +8,8 @@ yttext provides a browser app and CLI that turn original-language YouTube captio
 - Include timestamps in every format and source chapters in Markdown, text, and JSON
 - Create a Gemini summary in the transcript language or another BCP 47 language
 - In the browser app, prompt before sending captions longer than 50,000 characters
-- Preview, copy, and download transcript and summary files in the browser
+- Preview, copy, and download transcript and summary files in the browser, including Markdown
+  tables, nested lists, code, and LaTeX formulas
 - Use local browser cookies for restricted videos when running on the same computer
 - Keep the CLI for scripts and batch-friendly file output
 

@@ -45,9 +45,17 @@ jobs:
       - name: Check browser JavaScript syntax
         if: matrix.python-version == '3.14'
         run: |
+          node --check src/yttext/ui/markdown-it.min.js
+          node --check src/yttext/ui/mdit-plugin-tex.min.js
+          node --check src/yttext/ui/temml.min.js
+          node --check src/yttext/ui/markdown-renderer.js
           node --check src/yttext/ui/app.js
           node --check src/yttext/ui/enhancements.js
           node --check src/yttext/ui/theme-control.js
+
+      - name: Test Markdown rendering
+        if: matrix.python-version == '3.14'
+        run: node --test tests/js/markdown-renderer.test.js
 
       - name: Build release artifacts
         if: matrix.python-version == '3.14'
