@@ -120,8 +120,15 @@ def test_ui_supports_formats_summary_choices_downloads_and_model_discovery() -> 
     assert "new Blob" in script
     assert "URL.createObjectURL" in script
     assert "downloadArtifact" in script
+    assert '<select id="geminiModel"' in html
+    assert '<input id="geminiModel"' not in html
+    assert 'fetch("/api/info"' in enhancements
+    assert "appInfo?.capabilities?.server_api_key" in enhancements
+    assert "if (serverApiKey) await loadModels();" in enhancements
     assert "Load available models" in enhancements
+    assert "Refresh models" in enhancements
     assert "/api/gemini/models" in enhancements
+    assert "Choose a Gemini model" in enhancements
 
 
 def test_ui_uses_standard_css_sizing_and_leaves_zoom_to_the_browser() -> None:
