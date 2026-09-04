@@ -46,6 +46,8 @@ UI_ASSETS = frozenset(
         "app.js",
         "enhancements.css",
         "enhancements.js",
+        "markdown-it.min.js",
+        "markdown-renderer.js",
         "styles.css",
         "theme-control.css",
         "theme-control.js",

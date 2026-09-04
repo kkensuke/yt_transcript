@@ -52,7 +52,7 @@ Issues = "https://github.com/kkensuke/yttext/issues"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"yttext.ui" = ["*.html", "*.css", "*.js"]
+"yttext.ui" = ["*.html", "*.css", "*.js", "*.txt"]
 
 [tool.pytest.ini_options]
 addopts = "-q"

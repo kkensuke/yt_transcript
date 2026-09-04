@@ -968,7 +968,9 @@ select:disabled {
 .markdown-output h1,
 .markdown-output h2,
 .markdown-output h3,
-.markdown-output h4 {
+.markdown-output h4,
+.markdown-output h5,
+.markdown-output h6 {
   margin: 1.55em 0 0.65em;
   color: var(--text);
   letter-spacing: -0.02em;
@@ -984,6 +986,8 @@ select:disabled {
 .markdown-output h2 { font-size: 20px; }
 .markdown-output h3 { font-size: 17px; }
 .markdown-output h4 { font-size: 15px; }
+.markdown-output h5 { font-size: 14px; }
+.markdown-output h6 { font-size: 13px; }
 
 .markdown-output p {
   margin: 0 0 1.05em;
@@ -1001,6 +1005,44 @@ select:disabled {
 
 .markdown-output li {
   margin: 0.32em 0;
+}
+
+.markdown-output li > ul,
+.markdown-output li > ol {
+  margin: 0.32em 0 0.45em;
+}
+
+.markdown-output table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 0 1.1em;
+  overflow-x: auto;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.markdown-output th,
+.markdown-output td {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-output th {
+  background: var(--surface-muted);
+  font-weight: 750;
+}
+
+.markdown-output del,
+.markdown-output s {
+  color: var(--text-muted);
+}
+
+.markdown-image-placeholder {
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .markdown-output blockquote {
