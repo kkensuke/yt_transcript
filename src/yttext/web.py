@@ -43,12 +43,16 @@ UI_ROOT = Path(__file__).with_name("ui")
 API_KEY_HEADER = "X-Gemini-Api-Key"
 UI_ASSETS = frozenset(
     {
+        "Temml-Local.css",
+        "Temml.woff2",
         "app.js",
         "enhancements.css",
         "enhancements.js",
+        "mdit-plugin-tex.min.js",
         "markdown-it.min.js",
         "markdown-renderer.js",
         "styles.css",
+        "temml.min.js",
         "theme-control.css",
         "theme-control.js",
     }

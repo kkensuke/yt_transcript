@@ -46,6 +46,8 @@ jobs:
         if: matrix.python-version == '3.14'
         run: |
           node --check src/yttext/ui/markdown-it.min.js
+          node --check src/yttext/ui/mdit-plugin-tex.min.js
+          node --check src/yttext/ui/temml.min.js
           node --check src/yttext/ui/markdown-renderer.js
           node --check src/yttext/ui/app.js
           node --check src/yttext/ui/enhancements.js

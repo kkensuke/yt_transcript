@@ -26,6 +26,31 @@
     typographer: false,
   });
 
+  const texPlugin = window.mdItPluginTex?.tex;
+  const renderMath = window.temml?.renderToString;
+
+  if (typeof texPlugin === "function" && typeof renderMath === "function") {
+    parser.use(texPlugin, {
+      delimiters: "brackets",
+      mathFence: true,
+      render(content, displayMode) {
+        try {
+          return renderMath(String(content ?? ""), {
+            displayMode,
+            maxExpand: 1000,
+            maxSize: [20, 1000],
+            throwOnError: false,
+            trust: false,
+          });
+        } catch (_error) {
+          const open = displayMode ? "\\[" : "\\(";
+          const close = displayMode ? "\\]" : "\\)";
+          return `<code class="math-fallback">${escapeHtml(`${open}${content}${close}`)}</code>`;
+        }
+      },
+    });
+  }
+
   const defaultLinkOpen =
     parser.renderer.rules.link_open ||
     ((tokens, index, options, _environment, renderer) =>

@@ -444,6 +444,10 @@ def test_request_guards_and_security_headers() -> None:
     index = client.get("/")
     script = client.get("/static/app.js")
     markdown_it = client.get("/static/markdown-it.min.js")
+    tex_plugin = client.get("/static/mdit-plugin-tex.min.js")
+    temml = client.get("/static/temml.min.js")
+    temml_css = client.get("/static/Temml-Local.css")
+    temml_font = client.get("/static/Temml.woff2")
     markdown_renderer = client.get("/static/markdown-renderer.js")
     hidden_python = client.get("/static/__init__.py")
     info = client.get("/api/info")
@@ -454,6 +458,11 @@ def test_request_guards_and_security_headers() -> None:
     assert wrong_host.status_code == 400
     assert script.status_code == 200
     assert markdown_it.status_code == 200
+    assert tex_plugin.status_code == 200
+    assert temml.status_code == 200
+    assert temml_css.status_code == 200
+    assert temml_font.status_code == 200
+    assert temml_font.headers["content-type"] == "font/woff2"
     assert markdown_renderer.status_code == 200
     assert hidden_python.status_code == 404
     assert "default-src 'self'" in index.headers["content-security-policy"]

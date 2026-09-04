@@ -1,2 +1,2 @@
 include LICENSE
-recursive-include src/yttext/ui *.html *.css *.js *.txt
+recursive-include src/yttext/ui *.html *.css *.js *.txt *.woff2

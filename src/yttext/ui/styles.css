@@ -1083,6 +1083,26 @@ select:disabled {
   background: transparent;
 }
 
+.markdown-output math {
+  max-width: 100%;
+  color: inherit;
+  overflow-wrap: normal;
+}
+
+.markdown-output math[display="block"] {
+  margin: 1em 0;
+  padding: 0.2em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.markdown-output .math-fallback {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  color: var(--danger);
+}
+
 .toast-region {
   position: fixed;
   right: 22px;
