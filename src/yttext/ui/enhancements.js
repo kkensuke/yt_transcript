@@ -9,7 +9,7 @@
   const apiKeyInput = document.getElementById("apiKey");
   if (!modelSelect || !modelSource || !apiKeyInput) return;
 
-  let configuredModel = modelSelect.value.trim();
+  let serverApiKey = false;
 
   const tools = document.createElement("div");
   tools.className = "model-tools";
@@ -28,7 +28,6 @@
   function showConfiguredModel(model) {
     const value = String(model || "").trim();
     if (!value) return;
-    configuredModel = value;
     const option = document.createElement("option");
     option.value = value;
     option.textContent = value;
@@ -38,14 +37,13 @@
 
   async function loadModels() {
     const apiKey = apiKeyInput.value.trim();
-    const serverApiKey = Boolean(window.App?.hasServerApiKey?.());
     if (!apiKey && !serverApiKey) {
       status.textContent = "Enter your Gemini API key first.";
       apiKeyInput.focus();
       return;
     }
 
-    const preferredModel = modelSelect.value || configuredModel;
+    const preferredModel = modelSelect.value;
     loadButton.disabled = true;
     status.textContent = "Loading…";
     try {
@@ -107,12 +105,24 @@
     }
   }
 
-  loadButton.addEventListener("click", () => loadModels());
-  window.App.ready.then((appInfo) => {
-    showConfiguredModel(appInfo?.gemini_model || configuredModel);
-    loadButton.disabled = false;
-    if (appInfo?.capabilities?.server_api_key) {
-      loadModels();
+  async function initializeModels() {
+    try {
+      const response = await fetch("/api/info", {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+        credentials: "omit",
+      });
+      if (!response.ok) return;
+      const appInfo = await response.json();
+      showConfiguredModel(appInfo?.gemini_model);
+      serverApiKey = Boolean(appInfo?.capabilities?.server_api_key);
+      loadButton.disabled = false;
+      if (serverApiKey) await loadModels();
+    } catch (_error) {
+      loadButton.disabled = false;
     }
-  });
+  }
+
+  loadButton.addEventListener("click", () => loadModels());
+  initializeModels();
 })();
