@@ -1021,7 +1021,7 @@ select:disabled {
 .markdown-output code {
   padding: 0.15em 0.38em;
   border-radius: 5px;
-  color: #073f79;
+  color: var(--primary);
   background: var(--primary-soft);
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   font-size: 0.88em;
