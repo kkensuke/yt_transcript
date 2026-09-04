@@ -120,8 +120,8 @@ def test_ui_supports_formats_summary_choices_downloads_and_model_discovery() -> 
     assert "new Blob" in script
     assert "URL.createObjectURL" in script
     assert "downloadArtifact" in script
-    assert re.search(r'<select\s+id="geminiModel"\b', html)
-    assert not re.search(r'<input\s+id="geminiModel"\b', html)
+    assert '<select id="geminiModel"' in html
+    assert '<input id="geminiModel"' not in html
     assert 'fetch("/api/info"' in enhancements
     assert "appInfo?.capabilities?.server_api_key" in enhancements
     assert "if (serverApiKey) await loadModels();" in enhancements
